@@ -1,77 +1,165 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BookOpen, ArrowRight, Camera, User } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import type { Book, Event, HeroSlide, AboutContent } from "@/lib/types/database";
+import { formatDate, truncate } from "@/lib/utils/helpers";
+import HeroSlider from "@/components/public/HeroSlider";
 
-export default function HomePage() {
+/* ---------- Fallback placeholder data ---------- */
+
+const fallbackSlides: HeroSlide[] = [
+  {
+    id: "fallback-1",
+    image_url: "",
+    title: "Ramazan\nTemelkuran",
+    subtitle:
+      "Kelimelerin gücüne inanan, hikayelerin dünyayı değiştirebileceğini bilen bir yazar. Edebiyatın büyülü dünyasına hoş geldiniz.",
+    cta_text: "Kitapları Keşfet",
+    cta_link: "/books",
+    display_order: 1,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+];
+
+const fallbackBooks: Partial<Book>[] = [
+  { id: "fb-1", title: "Kitap Başlığı 1", slug: "kitap-1", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Roman", cover_image_url: null, display_order: 1 },
+  { id: "fb-2", title: "Kitap Başlığı 2", slug: "kitap-2", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Deneme", cover_image_url: null, display_order: 2 },
+  { id: "fb-3", title: "Kitap Başlığı 3", slug: "kitap-3", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Şiir", cover_image_url: null, display_order: 3 },
+];
+
+const fallbackEvents: Partial<Event>[] = [
+  { id: "fe-1", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "İstanbul" },
+  { id: "fe-2", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "Ankara" },
+  { id: "fe-3", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "İzmir" },
+  { id: "fe-4", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "Bursa" },
+];
+
+const fallbackAbout: Partial<AboutContent> = {
+  biography:
+    "Ramazan Temelkuran, edebiyat dünyasında önemli bir yere sahip olan yazar, eserleriyle okuyucularını derinden etkileyen ve düşünmeye sevk eden bir kalem. Yılların birikimiyle oluşturduğu eserlerinde toplumsal meseleleri bireysel hikayelerle harmanlıyor.",
+  portrait_image_url: null,
+};
+
+/* ---------- Data fetching ---------- */
+
+async function getHomePageData() {
+  try {
+    const supabase = await createClient();
+
+    const [slidesRes, booksRes, eventsRes, aboutRes] = await Promise.all([
+      supabase
+        .from("hero_slides")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order"),
+      supabase
+        .from("books")
+        .select("*")
+        .order("display_order")
+        .limit(3),
+      supabase
+        .from("events")
+        .select("*")
+        .order("event_date", { ascending: false })
+        .limit(4),
+      supabase
+        .from("about_content")
+        .select("*")
+        .single(),
+    ]);
+
+    return {
+      heroSlides: (slidesRes.data as HeroSlide[] | null) ?? fallbackSlides,
+      featuredBooks: (booksRes.data as Book[] | null) ?? (fallbackBooks as Book[]),
+      recentEvents: (eventsRes.data as Event[] | null) ?? (fallbackEvents as Event[]),
+      about: (aboutRes.data as AboutContent | null) ?? (fallbackAbout as AboutContent),
+    };
+  } catch {
+    // DB not set up yet — return placeholders
+    return {
+      heroSlides: fallbackSlides,
+      featuredBooks: fallbackBooks as Book[],
+      recentEvents: fallbackEvents as Event[],
+      about: fallbackAbout as AboutContent,
+    };
+  }
+}
+
+/* ---------- Page component ---------- */
+
+export default async function HomePage() {
+  const { heroSlides, featuredBooks, recentEvents, about } = await getHomePageData();
+
   return (
     <>
       {/* ===== HERO SECTION ===== */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-primary">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `radial-gradient(circle at 25% 25%, rgba(197, 165, 90, 0.3) 0%, transparent 50%),
-                               radial-gradient(circle at 75% 75%, rgba(197, 165, 90, 0.2) 0%, transparent 50%)`,
-            }}
-          />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Text Content */}
-            <div className="space-y-8 animate-fade-in-up">
-              <div className="space-y-4">
-                <p className="text-accent font-medium tracking-widest uppercase text-sm">
-                  Yazar &bull; Düşünür &bull; Anlatıcı
-                </p>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                  Ramazan
-                  <br />
-                  <span className="text-accent">Temelkuran</span>
-                </h1>
-                <p className="text-lg text-white/60 max-w-lg leading-relaxed">
-                  Kelimelerin gücüne inanan, hikayelerin dünyayı değiştirebileceğini
-                  bilen bir yazar. Edebiyatın büyülü dünyasına hoş geldiniz.
-                </p>
+      {heroSlides.length > 0 ? (
+        <HeroSlider slides={heroSlides} />
+      ) : (
+        /* Static fallback if no slides at all */
+        <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-primary">
+          <div className="absolute inset-0 opacity-5">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `radial-gradient(circle at 25% 25%, rgba(197, 165, 90, 0.3) 0%, transparent 50%),
+                                 radial-gradient(circle at 75% 75%, rgba(197, 165, 90, 0.2) 0%, transparent 50%)`,
+              }}
+            />
+          </div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8 animate-fade-in-up">
+                <div className="space-y-4">
+                  <p className="text-accent font-medium tracking-widest uppercase text-sm">
+                    Yazar &bull; Düşünür &bull; Anlatıcı
+                  </p>
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                    Ramazan
+                    <br />
+                    <span className="text-accent">Temelkuran</span>
+                  </h1>
+                  <p className="text-lg text-white/60 max-w-lg leading-relaxed">
+                    Kelimelerin gücüne inanan, hikayelerin dünyayı değiştirebileceğini
+                    bilen bir yazar. Edebiyatın büyülü dünyasına hoş geldiniz.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <Link
+                    href="/books"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline group"
+                  >
+                    <BookOpen size={18} />
+                    Kitapları Keşfet
+                    <ArrowRight
+                      size={16}
+                      className="group-hover:translate-x-1 transition-transform"
+                    />
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-lg hover:bg-white/10 transition-all duration-200 no-underline"
+                  >
+                    <User size={18} />
+                    Hakkında
+                  </Link>
+                </div>
               </div>
-
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/books"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline group"
-                >
-                  <BookOpen size={18} />
-                  Kitapları Keşfet
-                  <ArrowRight
-                    size={16}
-                    className="group-hover:translate-x-1 transition-transform"
-                  />
-                </Link>
-                <Link
-                  href="/about"
-                  className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-lg hover:bg-white/10 transition-all duration-200 no-underline"
-                >
-                  <User size={18} />
-                  Hakkında
-                </Link>
-              </div>
-            </div>
-
-            {/* Decorative Element */}
-            <div className="hidden lg:flex justify-center items-center">
-              <div className="relative w-80 h-80">
-                {/* Decorative circles */}
-                <div className="absolute inset-0 rounded-full border-2 border-accent/20 animate-pulse" />
-                <div className="absolute inset-4 rounded-full border border-accent/10" />
-                <div className="absolute inset-8 rounded-full bg-accent/5 flex items-center justify-center">
-                  <BookOpen size={64} className="text-accent/40" />
+              <div className="hidden lg:flex justify-center items-center">
+                <div className="relative w-80 h-80">
+                  <div className="absolute inset-0 rounded-full border-2 border-accent/20 animate-pulse" />
+                  <div className="absolute inset-4 rounded-full border border-accent/10" />
+                  <div className="absolute inset-8 rounded-full bg-accent/5 flex items-center justify-center">
+                    <BookOpen size={64} className="text-accent/40" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ===== FEATURED BOOKS SECTION ===== */}
       <section className="section-padding bg-secondary">
@@ -86,38 +174,48 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Placeholder Book Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="group bg-surface rounded-xl overflow-hidden shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-300 hover:-translate-y-1"
+            {featuredBooks.map((book) => (
+              <Link
+                key={book.id}
+                href={`/books/${book.slug}`}
+                className="group bg-surface rounded-xl overflow-hidden shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-300 hover:-translate-y-1 no-underline"
               >
-                {/* Book Cover Placeholder */}
-                <div className="aspect-[3/4] bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                  <BookOpen size={48} className="text-accent/30" />
+                {/* Book Cover */}
+                <div className="aspect-[3/4] relative bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                  {book.cover_image_url ? (
+                    <Image
+                      src={book.cover_image_url}
+                      alt={book.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <BookOpen size={48} className="text-accent/30" />
+                  )}
                 </div>
                 <div className="p-6 space-y-3">
-                  <span className="text-xs font-medium text-accent uppercase tracking-wider">
-                    Roman
-                  </span>
-                  <h3 className="text-lg font-bold group-hover:text-accent transition-colors">
-                    Kitap Başlığı {i}
+                  {book.category && (
+                    <span className="text-xs font-medium text-accent uppercase tracking-wider">
+                      {book.category}
+                    </span>
+                  )}
+                  <h3 className="text-lg font-bold group-hover:text-accent transition-colors text-primary">
+                    {book.title}
                   </h3>
-                  <p className="text-sm text-muted line-clamp-2">
-                    Bu kitabın kısa açıklaması burada yer alacak. İçerik yönetim
-                    panelinden düzenlenebilir.
-                  </p>
+                  {book.description && (
+                    <p className="text-sm text-muted line-clamp-2">
+                      {book.description}
+                    </p>
+                  )}
                   <div className="flex items-center gap-3 pt-2">
-                    <Link
-                      href="/books"
-                      className="text-sm font-medium text-accent hover:text-accent-dark transition-colors no-underline"
-                    >
+                    <span className="text-sm font-medium text-accent group-hover:text-accent-dark transition-colors">
                       Detaylar →
-                    </Link>
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -149,11 +247,10 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Placeholder Event Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
+            {recentEvents.map((event) => (
               <div
-                key={i}
+                key={event.id}
                 className="group relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-accent/10 cursor-pointer"
               >
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -161,8 +258,11 @@ export default function HomePage() {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <p className="text-sm font-medium">Etkinlik Adı</p>
-                  <p className="text-xs text-white/60">Tarih</p>
+                  <p className="text-sm font-medium">{event.title}</p>
+                  <p className="text-xs text-white/60">
+                    {formatDate(event.event_date)}
+                    {event.location && ` · ${event.location}`}
+                  </p>
                 </div>
               </div>
             ))}
@@ -187,10 +287,20 @@ export default function HomePage() {
       <section className="section-padding bg-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Portrait Placeholder */}
+            {/* Portrait */}
             <div className="flex justify-center">
               <div className="relative w-72 h-72 sm:w-96 sm:h-96 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                <User size={64} className="text-accent/20" />
+                {about.portrait_image_url ? (
+                  <Image
+                    src={about.portrait_image_url}
+                    alt="Ramazan Temelkuran"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 288px, 384px"
+                  />
+                ) : (
+                  <User size={64} className="text-accent/20" />
+                )}
                 {/* Decorative border */}
                 <div className="absolute -inset-2 rounded-2xl border-2 border-accent/20 -z-10" />
               </div>
@@ -207,14 +317,9 @@ export default function HomePage() {
                 </h2>
               </div>
               <p className="text-muted leading-relaxed">
-                Ramazan Temelkuran, edebiyat dünyasında önemli bir yere sahip olan
-                yazar, eserleriyle okuyucularını derinden etkileyen ve düşünmeye
-                sevk eden bir kalem. Yılların birikimiyle oluşturduğu eserlerinde
-                toplumsal meseleleri bireysel hikayelerle harmanlıyor.
-              </p>
-              <p className="text-muted leading-relaxed">
-                Birçok ödüle layık görülen yazar, ulusal ve uluslararası
-                etkinliklerde okuyucularıyla buluşmaya devam ediyor.
+                {about.biography
+                  ? truncate(about.biography, 200)
+                  : "Ramazan Temelkuran, edebiyat dünyasında önemli bir yere sahip olan yazar, eserleriyle okuyucularını derinden etkileyen ve düşünmeye sevk eden bir kalem."}
               </p>
               <Link
                 href="/about"
