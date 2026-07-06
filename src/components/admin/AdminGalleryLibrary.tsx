@@ -265,7 +265,7 @@ function MediaCreateForm({
         <button
           type="submit"
           disabled={pending || (type === "photo" && !photoUrl)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
         >
           {pending ? (
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -385,7 +385,7 @@ function GalleryMediaCard({
               type="button"
               onClick={handleDelete}
               disabled={deletePending}
-              className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               {deletePending ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-danger/20 border-t-danger" />
@@ -480,7 +480,7 @@ function MediaEditForm({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
       >
         {pending ? (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

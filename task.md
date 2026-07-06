@@ -26,7 +26,7 @@
 - [x] Books CRUD
 - [x] Events CRUD + media management
 - [x] Gallery management
-- [ ] Hero slider management
+- [x] Hero slider management
 - [ ] About page editor
 - [ ] Contact messages viewer
 - [ ] Site settings
