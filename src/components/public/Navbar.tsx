@@ -19,11 +19,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -37,6 +32,7 @@ export default function Navbar() {
           {/* Logo / Author Name */}
           <Link
             href="/"
+            onClick={() => setIsOpen(false)}
             className="group flex items-center gap-2 no-underline"
           >
             <span className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold text-primary tracking-wide group-hover:text-accent transition-colors duration-[var(--transition-base)]">
@@ -103,6 +99,7 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => setIsOpen(false)}
                   className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors no-underline ${
                     isActive
                       ? "text-accent bg-accent/5"
@@ -117,6 +114,7 @@ export default function Navbar() {
               href="https://shopier.com"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => setIsOpen(false)}
               className="flex items-center gap-2 mx-4 mt-3 px-5 py-3 bg-accent text-white text-sm font-medium rounded-lg text-center justify-center hover:bg-accent-dark transition-colors no-underline"
             >
               <BookOpen size={16} />

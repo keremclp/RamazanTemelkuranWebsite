@@ -15,7 +15,7 @@ export default async function GalleryPage() {
     .from("events")
     .select(`
       *,
-      media (*)
+      media:media!media_event_id_fkey (*)
     `)
     .order("event_date", { ascending: false });
 

@@ -2,9 +2,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { BookOpen, ArrowRight, Camera, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import type { Book, Event, HeroSlide, AboutContent } from "@/lib/types/database";
+import type { Book, Event, HeroSlide, AboutContent, Media } from "@/lib/types/database";
 import { formatDate, truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
+
+type HomeEvent = Event & {
+  media?: Media[];
+};
 
 /* ---------- Fallback placeholder data ---------- */
 
@@ -29,7 +33,7 @@ const fallbackBooks: Partial<Book>[] = [
   { id: "fb-3", title: "Kitap Başlığı 3", slug: "kitap-3", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Şiir", cover_image_url: null, display_order: 3 },
 ];
 
-const fallbackEvents: Partial<Event>[] = [
+const fallbackEvents: Partial<HomeEvent>[] = [
   { id: "fe-1", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "İstanbul" },
   { id: "fe-2", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "Ankara" },
   { id: "fe-3", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "İzmir" },
@@ -61,7 +65,10 @@ async function getHomePageData() {
         .limit(3),
       supabase
         .from("events")
-        .select("*")
+        .select(`
+          *,
+          media:media!media_event_id_fkey (*)
+        `)
         .order("event_date", { ascending: false })
         .limit(4),
       supabase
@@ -73,7 +80,7 @@ async function getHomePageData() {
     return {
       heroSlides: (slidesRes.data as HeroSlide[] | null) ?? fallbackSlides,
       featuredBooks: (booksRes.data as Book[] | null) ?? (fallbackBooks as Book[]),
-      recentEvents: (eventsRes.data as Event[] | null) ?? (fallbackEvents as Event[]),
+      recentEvents: (eventsRes.data as HomeEvent[] | null) ?? (fallbackEvents as HomeEvent[]),
       about: (aboutRes.data as AboutContent | null) ?? (fallbackAbout as AboutContent),
     };
   } catch {
@@ -81,7 +88,7 @@ async function getHomePageData() {
     return {
       heroSlides: fallbackSlides,
       featuredBooks: fallbackBooks as Book[],
-      recentEvents: fallbackEvents as Event[],
+      recentEvents: fallbackEvents as HomeEvent[],
       about: fallbackAbout as AboutContent,
     };
   }
@@ -248,24 +255,44 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {recentEvents.map((event) => (
-              <div
-                key={event.id}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-accent/10 cursor-pointer"
-              >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Camera size={32} className="text-accent/20" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <p className="text-sm font-medium">{event.title}</p>
-                  <p className="text-xs text-white/60">
-                    {formatDate(event.event_date)}
-                    {event.location && ` · ${event.location}`}
-                  </p>
-                </div>
-              </div>
-            ))}
+            {recentEvents.map((event) => {
+              const coverMedia = (event.media ?? []).find(
+                (item) =>
+                  item.id === event.homepage_media_id && item.type === "photo"
+              );
+              const coverImageUrl = coverMedia?.url ?? null;
+
+              return (
+                <Link
+                  key={event.id}
+                  href="/gallery"
+                  className="group relative aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 no-underline"
+                  aria-label={`${event.title} etkinliğini galeride görüntüle`}
+                >
+                  {coverImageUrl ? (
+                    <Image
+                      src={coverImageUrl}
+                      alt={event.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 1024px) 50vw, 25vw"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Camera size={32} className="text-accent/20" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/10 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-90" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <p className="text-sm font-medium">{event.title}</p>
+                    <p className="text-xs text-white/70">
+                      {formatDate(event.event_date)}
+                      {event.location && ` · ${event.location}`}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
 
           <div className="text-center mt-10">

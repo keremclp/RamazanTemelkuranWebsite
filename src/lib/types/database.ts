@@ -25,6 +25,7 @@ export interface Event {
   description: string | null;
   event_date: string;
   location: string | null;
+  homepage_media_id: string | null;
   created_at: string;
 }
 

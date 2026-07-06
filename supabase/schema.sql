@@ -35,6 +35,7 @@ CREATE TABLE events (
   description TEXT,
   event_date DATE NOT NULL,
   location TEXT,
+  homepage_media_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -51,6 +52,10 @@ CREATE TABLE media (
   display_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE events
+  ADD CONSTRAINT events_homepage_media_id_fkey
+  FOREIGN KEY (homepage_media_id) REFERENCES media(id) ON DELETE SET NULL;
 
 -- ============================================
 -- 4. HERO SLIDES (homepage slider)
