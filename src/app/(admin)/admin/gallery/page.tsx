@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Calendar, ImageIcon, Plus, Video } from "lucide-react";
+import { Calendar, ImageIcon, Video } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Event, Media } from "@/lib/types/database";
 import AdminGalleryLibrary from "@/components/admin/AdminGalleryLibrary";
@@ -13,31 +12,40 @@ export type AdminGalleryMedia = Media & {
   event: Pick<Event, "id" | "title" | "event_date" | "homepage_media_id"> | null;
 };
 
-export default async function AdminGalleryPage() {
+export default async function AdminGalleryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ event?: string }>;
+}) {
+  const { event: initialEventId } = await searchParams;
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("media")
-    .select(`
-      *,
-      event:events!media_event_id_fkey (
-        id,
-        title,
-        event_date,
-        homepage_media_id
-      )
-    `)
-    .order("created_at", { ascending: false });
+  const [mediaRes, eventsRes] = await Promise.all([
+    supabase
+      .from("media")
+      .select(`
+        *,
+        event:events!media_event_id_fkey (
+          id,
+          title,
+          event_date,
+          homepage_media_id
+        )
+      `)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("events")
+      .select("id, title, event_date, homepage_media_id")
+      .order("event_date", { ascending: false }),
+  ]);
 
-  const media = (data as AdminGalleryMedia[] | null) ?? [];
+  const media = (mediaRes.data as AdminGalleryMedia[] | null) ?? [];
+  const events =
+    (eventsRes.data as Pick<
+      Event,
+      "id" | "title" | "event_date" | "homepage_media_id"
+    >[] | null) ?? [];
   const photoCount = media.filter((item) => item.type === "photo").length;
   const videoCount = media.filter((item) => item.type === "video").length;
-  const events = Array.from(
-    new Map(
-      media
-        .filter((item) => item.event)
-        .map((item) => [item.event!.id, item.event!])
-    ).values()
-  ).sort((a, b) => a.title.localeCompare(b.title, "tr"));
 
   return (
     <div className="space-y-6">
@@ -47,16 +55,9 @@ export default async function AdminGalleryPage() {
             Galeri
           </h1>
           <p className="mt-1 text-muted">
-            Tüm etkinlik fotoğraflarını ve videolarını tek yerden görüntüleyin.
+            Fotoğraf ve videoları yükleyin, etkinliklere bağlayın ve ana sayfa görselini seçin.
           </p>
         </div>
-        <Link
-          href="/admin/events"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-medium text-white no-underline transition hover:bg-accent-dark"
-        >
-          <Plus size={18} />
-          Etkinliğe Medya Ekle
-        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -65,7 +66,7 @@ export default async function AdminGalleryPage() {
         <StatCard icon={<Calendar size={20} />} label="Etkinlik" value={events.length} />
       </div>
 
-      {error ? (
+      {mediaRes.error || eventsRes.error ? (
         <div
           role="alert"
           className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger"
@@ -73,7 +74,11 @@ export default async function AdminGalleryPage() {
           Galeri medyası yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.
         </div>
       ) : (
-        <AdminGalleryLibrary media={media} events={events} />
+        <AdminGalleryLibrary
+          media={media}
+          events={events}
+          initialEventId={initialEventId}
+        />
       )}
     </div>
   );

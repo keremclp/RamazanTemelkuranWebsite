@@ -135,6 +135,7 @@ function revalidateEventPages(eventId?: string) {
   revalidatePath("/gallery");
   revalidatePath("/admin");
   revalidatePath("/admin/events");
+  revalidatePath("/admin/gallery");
   if (eventId) revalidatePath(`/admin/events/${eventId}`);
 }
 
@@ -315,6 +316,133 @@ export async function deleteGalleryMediaAction(
 
   revalidateEventPages(media.event_id ?? undefined);
   return { message: "" };
+}
+
+export async function createGalleryMediaAction(
+  _previousState: MediaFormState,
+  formData: FormData
+): Promise<MediaFormState> {
+  const eventId = getString(formData, "event_id");
+  const parsed = parseMediaForm(eventId, formData);
+  if (parsed.error !== undefined) return initialMediaError(parsed.error);
+
+  const { supabase, user } = await getAuthenticatedClient();
+  if (!user) return initialMediaError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  const { data: event } = await supabase
+    .from("events")
+    .select("id")
+    .eq("id", eventId)
+    .single();
+
+  if (!event) return initialMediaError("Seçilen etkinlik bulunamadı.");
+
+  const shouldUseOnHomepage = getString(formData, "use_on_homepage") === "on";
+  const { data: media, error } = await supabase
+    .from("media")
+    .insert(parsed.data)
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Gallery media create error:", error);
+    return initialMediaError("Medya kaydedilemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (shouldUseOnHomepage && parsed.data.type === "photo" && media?.id) {
+    const { error: eventError } = await supabase
+      .from("events")
+      .update({ homepage_media_id: media.id })
+      .eq("id", eventId);
+
+    if (eventError) {
+      console.error("Gallery homepage media set error:", eventError);
+      return initialMediaError("Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.");
+    }
+  }
+
+  revalidateEventPages(eventId);
+  return {
+    message: "",
+    success:
+      shouldUseOnHomepage && parsed.data.type === "photo"
+        ? "Medya eklendi ve ana sayfa görseli olarak seçildi."
+        : "Medya başarıyla eklendi.",
+  };
+}
+
+export async function updateGalleryMediaAction(
+  mediaId: string,
+  _previousState: MediaFormState,
+  formData: FormData
+): Promise<MediaFormState> {
+  const eventId = getString(formData, "event_id");
+  const caption = getString(formData, "caption") || null;
+  const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
+  const shouldUseOnHomepage = getString(formData, "use_on_homepage") === "on";
+
+  if (!eventId) return initialMediaError("Etkinlik seçmelisiniz.");
+  if (Number.isNaN(displayOrder) || displayOrder < 0) {
+    return initialMediaError("Görüntülenme sırası sıfır veya daha büyük olmalıdır.");
+  }
+
+  const { supabase, user } = await getAuthenticatedClient();
+  if (!user) return initialMediaError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  const [{ data: existingMedia }, { data: event }] = await Promise.all([
+    supabase
+      .from("media")
+      .select("id, event_id, type")
+      .eq("id", mediaId)
+      .single(),
+    supabase.from("events").select("id").eq("id", eventId).single(),
+  ]);
+
+  if (!existingMedia) return initialMediaError("Medya kaydı bulunamadı.");
+  if (!event) return initialMediaError("Seçilen etkinlik bulunamadı.");
+
+  const { error } = await supabase
+    .from("media")
+    .update({
+      event_id: eventId,
+      caption,
+      display_order: displayOrder,
+    })
+    .eq("id", mediaId);
+
+  if (error) {
+    console.error("Gallery media update error:", error);
+    return initialMediaError("Medya güncellenemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (existingMedia.event_id && existingMedia.event_id !== eventId) {
+    await supabase
+      .from("events")
+      .update({ homepage_media_id: null })
+      .eq("id", existingMedia.event_id)
+      .eq("homepage_media_id", mediaId);
+  }
+
+  if (existingMedia.type === "photo" && shouldUseOnHomepage) {
+    const { error: eventError } = await supabase
+      .from("events")
+      .update({ homepage_media_id: mediaId })
+      .eq("id", eventId);
+
+    if (eventError) {
+      console.error("Gallery homepage media update error:", eventError);
+      return initialMediaError("Medya güncellendi, ancak ana sayfa görseli seçilemedi.");
+    }
+  } else {
+    await supabase
+      .from("events")
+      .update({ homepage_media_id: null })
+      .eq("homepage_media_id", mediaId);
+  }
+
+  revalidateEventPages(eventId);
+  if (existingMedia.event_id) revalidateEventPages(existingMedia.event_id);
+  return { message: "", success: "Medya güncellendi." };
 }
 
 export async function setEventHomepageMediaAction(
