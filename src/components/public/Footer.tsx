@@ -1,10 +1,7 @@
 import Link from "next/link";
-import {
-  BookOpen,
-  Mail,
-  ArrowUpRight,
-} from "lucide-react";
-import { NAV_LINKS, SITE_NAME } from "@/lib/utils/constants";
+import { BookOpen, Mail, ArrowUpRight } from "lucide-react";
+import { NAV_LINKS } from "@/lib/utils/constants";
+import type { SiteSettings } from "@/lib/types/database";
 
 /* Social media SVG icons (Lucide dropped brand icons) */
 const InstagramIcon = () => (
@@ -33,8 +30,27 @@ const YoutubeIcon = () => (
   </svg>
 );
 
-export default function Footer() {
+const socialIconMap: Record<string, React.ReactNode> = {
+  instagram: <InstagramIcon />,
+  twitter: <TwitterIcon />,
+  facebook: <FacebookIcon />,
+  youtube: <YoutubeIcon />,
+};
+
+const socialLabels: Record<string, string> = {
+  instagram: "Instagram",
+  twitter: "X / Twitter",
+  facebook: "Facebook",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  website: "Web Sitesi",
+};
+
+export default function Footer({ settings }: { settings: SiteSettings }) {
   const currentYear = new Date().getFullYear();
+  const socialEntries = Object.entries(settings.social_links).filter(
+    ([, url]) => Boolean(url)
+  );
 
   return (
     <footer className="bg-primary text-white/80">
@@ -44,19 +60,23 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="space-y-4">
             <h3 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-white">
-              {SITE_NAME}
+              {settings.site_title}
             </h3>
             <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-              Edebiyatın büyülü dünyasında bir yolculuğa çıkın. Kitaplar,
-              etkinlikler ve daha fazlası için takipte kalın.
+              {settings.meta_description}
             </p>
-            {/* Social Links */}
-            <div className="flex items-center gap-3 pt-2">
-              <SocialLink href="#" icon={<InstagramIcon />} label="Instagram" />
-              <SocialLink href="#" icon={<TwitterIcon />} label="Twitter" />
-              <SocialLink href="#" icon={<FacebookIcon />} label="Facebook" />
-              <SocialLink href="#" icon={<YoutubeIcon />} label="YouTube" />
-            </div>
+            {socialEntries.length > 0 && (
+              <div className="flex items-center gap-3 pt-2">
+                {socialEntries.map(([platform, url]) => (
+                  <SocialLink
+                    key={platform}
+                    href={url}
+                    icon={socialIconMap[platform] ?? <ArrowUpRight size={18} />}
+                    label={socialLabels[platform] ?? platform}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Links */}
@@ -80,24 +100,26 @@ export default function Footer() {
 
           {/* Shopier & Contact */}
           <div className="space-y-6">
-            <div className="space-y-4">
-              <h4 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-white">
-                Kitap Siparişi
-              </h4>
-              <p className="text-sm text-white/60">
-                Kitaplarıma Shopier üzerinden ulaşabilirsiniz.
-              </p>
-              <Link
-                href="https://shopier.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dark transition-colors no-underline"
-              >
-                <BookOpen size={16} />
-                Shopier&apos;e Git
-                <ArrowUpRight size={14} />
-              </Link>
-            </div>
+            {settings.shopier_main_url && (
+              <div className="space-y-4">
+                <h4 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-white">
+                  Kitap Siparişi
+                </h4>
+                <p className="text-sm text-white/60">
+                  Kitaplarıma Shopier üzerinden ulaşabilirsiniz.
+                </p>
+                <Link
+                  href={settings.shopier_main_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dark transition-colors no-underline"
+                >
+                  <BookOpen size={16} />
+                  Shopier&apos;e Git
+                  <ArrowUpRight size={14} />
+                </Link>
+              </div>
+            )}
 
             <div className="space-y-2">
               <h4 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-white">
@@ -119,11 +141,9 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            &copy; {currentYear} {SITE_NAME}. Tüm hakları saklıdır.
+            &copy; {currentYear} {settings.site_title}. Tüm hakları saklıdır.
           </p>
-          <p className="text-xs text-white/30">
-            Sevgiyle tasarlandı ✦
-          </p>
+          <p className="text-xs text-white/30">Sevgiyle tasarlandı ✦</p>
         </div>
       </div>
     </footer>

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { BookOpen, ArrowRight, Camera, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Book, Event, HeroSlide, AboutContent, Media } from "@/lib/types/database";
+import { getSiteSettings } from "@/lib/site-settings";
 import { formatDate, truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
 
@@ -52,7 +53,7 @@ async function getHomePageData() {
   try {
     const supabase = await createClient();
 
-    const [slidesRes, booksRes, eventsRes, aboutRes] = await Promise.all([
+    const [slidesRes, booksRes, eventsRes, aboutRes, settings] = await Promise.all([
       supabase
         .from("hero_slides")
         .select("*")
@@ -75,6 +76,7 @@ async function getHomePageData() {
         .from("about_content")
         .select("*")
         .single(),
+      getSiteSettings(),
     ]);
 
     return {
@@ -82,6 +84,7 @@ async function getHomePageData() {
       featuredBooks: (booksRes.data as Book[] | null) ?? (fallbackBooks as Book[]),
       recentEvents: (eventsRes.data as HomeEvent[] | null) ?? (fallbackEvents as HomeEvent[]),
       about: (aboutRes.data as AboutContent | null) ?? (fallbackAbout as AboutContent),
+      settings,
     };
   } catch {
     // DB not set up yet — return placeholders
@@ -90,6 +93,7 @@ async function getHomePageData() {
       featuredBooks: fallbackBooks as Book[],
       recentEvents: fallbackEvents as HomeEvent[],
       about: fallbackAbout as AboutContent,
+      settings: await getSiteSettings(),
     };
   }
 }
@@ -97,7 +101,7 @@ async function getHomePageData() {
 /* ---------- Page component ---------- */
 
 export default async function HomePage() {
-  const { heroSlides, featuredBooks, recentEvents, about } = await getHomePageData();
+  const { heroSlides, featuredBooks, recentEvents, about, settings } = await getHomePageData();
 
   return (
     <>
@@ -381,15 +385,17 @@ export default async function HomePage() {
             Tüm kitaplarıma Shopier üzerinden kolayca ulaşabilir ve sipariş
             verebilirsiniz.
           </p>
-          <Link
-            href="https://shopier.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline text-lg"
-          >
-            <BookOpen size={20} />
-            Shopier&apos;den Satın Al
-          </Link>
+          {settings.shopier_main_url && (
+            <Link
+              href={settings.shopier_main_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline text-lg"
+            >
+              <BookOpen size={20} />
+              Shopier&apos;den Satın Al
+            </Link>
+          )}
         </div>
       </section>
     </>

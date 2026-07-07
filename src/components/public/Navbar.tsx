@@ -6,7 +6,13 @@ import { usePathname } from "next/navigation";
 import { Menu, X, BookOpen } from "lucide-react";
 import { NAV_LINKS } from "@/lib/utils/constants";
 
-export default function Navbar() {
+export default function Navbar({
+  siteTitle,
+  shopierUrl,
+}: {
+  siteTitle: string;
+  shopierUrl: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
@@ -36,7 +42,7 @@ export default function Navbar() {
             className="group flex items-center gap-2 no-underline"
           >
             <span className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold text-primary tracking-wide group-hover:text-accent transition-colors duration-[var(--transition-base)]">
-              Ramazan Temelkuran
+              {siteTitle}
             </span>
           </Link>
 
@@ -63,15 +69,17 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            <Link
-              href="https://shopier.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-4 inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dark transition-colors duration-[var(--transition-fast)] no-underline"
-            >
-              <BookOpen size={16} />
-              Kitap Satın Al
-            </Link>
+            {shopierUrl && (
+              <Link
+                href={shopierUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-4 inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dark transition-colors duration-[var(--transition-fast)] no-underline"
+              >
+                <BookOpen size={16} />
+                Kitap Satın Al
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -110,16 +118,18 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            <Link
-              href="https://shopier.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 mx-4 mt-3 px-5 py-3 bg-accent text-white text-sm font-medium rounded-lg text-center justify-center hover:bg-accent-dark transition-colors no-underline"
-            >
-              <BookOpen size={16} />
-              Kitap Satın Al
-            </Link>
+            {shopierUrl && (
+              <Link
+                href={shopierUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 mx-4 mt-3 px-5 py-3 bg-accent text-white text-sm font-medium rounded-lg text-center justify-center hover:bg-accent-dark transition-colors no-underline"
+              >
+                <BookOpen size={16} />
+                Kitap Satın Al
+              </Link>
+            )}
           </div>
         </div>
       </nav>

@@ -27,9 +27,9 @@
 - [x] Events CRUD + media management
 - [x] Gallery management
 - [x] Hero slider management
-- [ ] About page editor
-- [ ] Contact messages viewer
-- [ ] Site settings
+- [x] About page editor
+- [x] Contact messages viewer
+- [x] Site settings
 
 ## Phase 4 — Polish & Deploy
 - [ ] SEO: metadata, structured data, sitemap, robots.txt

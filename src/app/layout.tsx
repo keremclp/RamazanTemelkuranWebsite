@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import { getSiteSettings } from "@/lib/site-settings";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
@@ -14,25 +15,29 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Ramazan Temelkuran | Yazar",
-    template: "%s | Ramazan Temelkuran",
-  },
-  description:
-    "Yazar Ramazan Temelkuran'ın resmi web sitesi. Kitaplar, etkinlikler ve daha fazlası.",
-  keywords: ["Ramazan Temelkuran", "yazar", "kitap", "edebiyat"],
-  authors: [{ name: "Ramazan Temelkuran" }],
-  openGraph: {
-    type: "website",
-    locale: "tr_TR",
-    siteName: "Ramazan Temelkuran",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+
+  return {
+    title: {
+      default: `${settings.site_title} | Yazar`,
+      template: `%s | ${settings.site_title}`,
+    },
+    description: settings.meta_description,
+    keywords: [settings.site_title, "yazar", "kitap", "edebiyat"],
+    authors: [{ name: settings.site_title }],
+    openGraph: {
+      type: "website",
+      locale: "tr_TR",
+      siteName: settings.site_title,
+      description: settings.meta_description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default function RootLayout({
   children,
