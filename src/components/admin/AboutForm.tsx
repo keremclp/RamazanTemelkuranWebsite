@@ -1,7 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertCircle, Plus, Save, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
 import type { AboutContent, Milestone, SocialLinks } from "@/lib/types/database";
 import type { AboutFormState } from "@/app/(admin)/admin/about/actions";
@@ -19,13 +26,11 @@ const initialState: AboutFormState = { message: "" };
 const inputClassName =
   "w-full rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20";
 
+const milestonesPerPage = 3;
+
 const socialFields: { key: keyof SocialLinks; label: string }[] = [
   { key: "instagram", label: "Instagram" },
-  { key: "twitter", label: "X / Twitter" },
-  { key: "facebook", label: "Facebook" },
   { key: "youtube", label: "YouTube" },
-  { key: "linkedin", label: "LinkedIn" },
-  { key: "website", label: "Web Sitesi" },
 ];
 
 const emptyMilestone: Milestone = {
@@ -44,6 +49,25 @@ export default function AboutForm({ action, about }: AboutFormProps) {
       ? about.milestones
       : [{ ...emptyMilestone }]
   );
+  const [milestonePage, setMilestonePage] = useState(0);
+
+  const totalMilestonePages = Math.max(
+    1,
+    Math.ceil(milestones.length / milestonesPerPage)
+  );
+  const currentMilestonePage = Math.min(
+    milestonePage,
+    totalMilestonePages - 1
+  );
+  const milestonePageStart = currentMilestonePage * milestonesPerPage;
+  const visibleMilestones = milestones
+    .map((milestone, index) => ({ milestone, index }))
+    .slice(milestonePageStart, milestonePageStart + milestonesPerPage);
+  const firstVisibleMilestone = milestonePageStart + 1;
+  const lastVisibleMilestone = Math.min(
+    milestones.length,
+    milestonePageStart + milestonesPerPage
+  );
 
   function updateMilestone(
     index: number,
@@ -58,10 +82,16 @@ export default function AboutForm({ action, about }: AboutFormProps) {
   }
 
   function addMilestone() {
+    const nextLength = milestones.length + 1;
     setMilestones((current) => [...current, { ...emptyMilestone }]);
+    setMilestonePage(Math.ceil(nextLength / milestonesPerPage) - 1);
   }
 
   function removeMilestone(index: number) {
+    if (visibleMilestones.length === 1 && currentMilestonePage > 0) {
+      setMilestonePage(currentMilestonePage - 1);
+    }
+
     setMilestones((current) =>
       current.length === 1
         ? [{ ...emptyMilestone }]
@@ -136,8 +166,41 @@ export default function AboutForm({ action, about }: AboutFormProps) {
               value={JSON.stringify(milestones)}
             />
 
+            <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border/60 bg-secondary/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted">
+                {milestones.length} adım içinden {firstVisibleMilestone}-
+                {lastVisibleMilestone} arası gösteriliyor.
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMilestonePage(currentMilestonePage - 1)}
+                  disabled={pending || currentMilestonePage === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ChevronLeft size={14} />
+                  Önceki
+                </button>
+                <span className="min-w-14 text-center text-xs font-medium text-muted">
+                  {currentMilestonePage + 1} / {totalMilestonePages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setMilestonePage(currentMilestonePage + 1)}
+                  disabled={
+                    pending || currentMilestonePage >= totalMilestonePages - 1
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Sonraki
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-4">
-              {milestones.map((milestone, index) => (
+              {visibleMilestones.map(({ milestone, index }) => (
                 <div
                   key={index}
                   className="rounded-2xl border border-border/70 bg-secondary/30 p-4"

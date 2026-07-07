@@ -24,11 +24,7 @@ const initialError = (message: string): SiteSettingsFormState => ({ message });
 
 const socialKeys = [
   "instagram",
-  "twitter",
-  "facebook",
   "youtube",
-  "linkedin",
-  "website",
 ] as const;
 
 function getString(formData: FormData, key: string) {

@@ -218,7 +218,7 @@ Birçok ödüle layık görülen yazar, ulusal ve uluslararası etkinliklerde ok
     {"year": "2020", "title": "Uluslararası Tanınırlık", "description": "Eserleri farklı dillere çevrilmeye başlandı."},
     {"year": "2024", "title": "Yeni Eserler", "description": "Yeni kitaplarıyla okuyucularıyla buluşmaya devam ediyor."}
   ]'::jsonb,
-  '{"instagram": "#", "twitter": "#", "facebook": "#", "youtube": "#"}'::jsonb
+  '{"instagram": "#", "youtube": "#"}'::jsonb
 );
 
 -- Insert default site settings
@@ -227,7 +227,7 @@ VALUES (
   'Ramazan Temelkuran',
   'https://shopier.com',
   'Yazar Ramazan Temelkuran''ın resmi web sitesi. Kitaplar, etkinlikler ve daha fazlası.',
-  '{"instagram": "#", "twitter": "#", "facebook": "#", "youtube": "#"}'::jsonb
+  '{"instagram": "#", "youtube": "#"}'::jsonb
 );
 
 -- Insert sample books

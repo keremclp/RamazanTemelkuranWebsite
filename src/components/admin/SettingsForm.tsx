@@ -20,11 +20,7 @@ const inputClassName =
 
 const socialFields: { key: keyof SocialLinks; label: string }[] = [
   { key: "instagram", label: "Instagram" },
-  { key: "twitter", label: "X / Twitter" },
-  { key: "facebook", label: "Facebook" },
   { key: "youtube", label: "YouTube" },
-  { key: "linkedin", label: "LinkedIn" },
-  { key: "website", label: "Web Sitesi" },
 ];
 
 export default function SettingsForm({

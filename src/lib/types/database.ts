@@ -69,11 +69,7 @@ export interface Milestone {
 
 export interface SocialLinks {
   instagram?: string;
-  twitter?: string;
-  facebook?: string;
   youtube?: string;
-  linkedin?: string;
-  website?: string;
 }
 
 export interface ContactMessage {

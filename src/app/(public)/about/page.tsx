@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { User, Mail } from "lucide-react";
+import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { AboutContent } from "@/lib/types/database";
 
@@ -18,22 +18,6 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-function TwitterIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
-function FacebookIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-    </svg>
-  );
-}
-
 function YouTubeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -42,20 +26,19 @@ function YouTubeIcon({ className }: { className?: string }) {
   );
 }
 
-const socialIconMap: Record<string, React.FC<{ className?: string }>> = {
+const socialPlatforms = ["instagram", "youtube"] as const;
+
+const socialIconMap: Record<
+  (typeof socialPlatforms)[number],
+  React.FC<{ className?: string }>
+> = {
   instagram: InstagramIcon,
-  twitter: TwitterIcon,
-  facebook: FacebookIcon,
   youtube: YouTubeIcon,
 };
 
-const socialLabels: Record<string, string> = {
+const socialLabels: Record<(typeof socialPlatforms)[number], string> = {
   instagram: "Instagram",
-  twitter: "X (Twitter)",
-  facebook: "Facebook",
   youtube: "YouTube",
-  linkedin: "LinkedIn",
-  website: "Web Sitesi",
 };
 
 export default async function AboutPage() {
@@ -67,6 +50,10 @@ export default async function AboutPage() {
     .single();
 
   const about = data as AboutContent | null;
+  const socialEntries = socialPlatforms.flatMap((platform) => {
+    const url = about?.social_links?.[platform];
+    return url ? [{ platform, url }] : [];
+  });
 
   return (
     <section className="section-padding">
@@ -162,15 +149,14 @@ export default async function AboutPage() {
         )}
 
         {/* Social Media Links */}
-        {about?.social_links && Object.keys(about.social_links).length > 0 && (
+        {socialEntries.length > 0 && (
           <div className="text-center">
             <h2 className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-heading)] text-primary mb-8">
               Sosyal Medya
             </h2>
 
             <div className="flex flex-wrap justify-center gap-4">
-              {Object.entries(about.social_links).map(([platform, url]) => {
-                if (!url) return null;
+              {socialEntries.map(({ platform, url }) => {
                 const IconComponent = socialIconMap[platform];
 
                 return (
@@ -180,15 +166,11 @@ export default async function AboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group flex items-center gap-3 px-6 py-3 bg-surface border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:border-accent hover:-translate-y-0.5 transition-all duration-300"
-                    title={socialLabels[platform] || platform}
+                    title={socialLabels[platform]}
                   >
-                    {IconComponent ? (
-                      <IconComponent className="w-5 h-5 text-muted group-hover:text-accent transition-colors" />
-                    ) : (
-                      <Mail className="w-5 h-5 text-muted group-hover:text-accent transition-colors" />
-                    )}
+                    <IconComponent className="w-5 h-5 text-muted group-hover:text-accent transition-colors" />
                     <span className="text-sm font-medium text-primary group-hover:text-accent transition-colors">
-                      {socialLabels[platform] || platform}
+                      {socialLabels[platform]}
                     </span>
                   </a>
                 );
