@@ -90,10 +90,10 @@ export default function BookFilter({ books, categories }: BookFilterProps) {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 mt-auto">
+              <div className="mt-auto flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={`/books/${book.slug}`}
-                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-[var(--radius-md)] border border-accent text-accent text-sm font-medium hover:bg-accent hover:text-white transition-all duration-[var(--transition-base)]"
+                  className="inline-flex w-full items-center justify-center px-4 py-2.5 rounded-[var(--radius-md)] border border-accent text-accent text-sm font-medium hover:bg-accent hover:text-white transition-all duration-[var(--transition-base)] sm:flex-1"
                 >
                   Detaylar
                 </Link>
@@ -102,9 +102,9 @@ export default function BookFilter({ books, categories }: BookFilterProps) {
                     href={book.shopier_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-[var(--radius-md)] bg-accent text-white text-sm font-medium hover:bg-accent-dark transition-all duration-[var(--transition-base)]"
+                    className="inline-flex w-full items-center justify-center gap-1.5 px-4 py-2.5 rounded-[var(--radius-md)] bg-accent text-white text-sm font-medium hover:bg-accent-dark transition-all duration-[var(--transition-base)] sm:flex-1"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                     Shopier&apos;den Al
                   </a>
                 )}
