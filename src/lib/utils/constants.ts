@@ -25,13 +25,4 @@ export const ADMIN_NAV_LINKS = [
   { href: "/admin/settings", label: "Ayarlar", icon: "Settings" },
 ] as const;
 
-export const BOOK_CATEGORIES = [
-  "Roman",
-  "Deneme",
-  "Şiir",
-  "Araştırma",
-  "Anı",
-  "Diğer",
-] as const;
-
 export const PLACEHOLDER_IMAGE = "/images/placeholder.jpg";

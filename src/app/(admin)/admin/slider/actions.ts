@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
 
 export interface HeroSlideFormState {
   message: string;
+  committedImageUrl?: string | null;
 }
 
 interface HeroSlidePayload {
@@ -128,6 +130,16 @@ export async function updateHeroSlideAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
 
+  const { data: existingSlide, error: fetchError } = await supabase
+    .from("hero_slides")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !existingSlide) {
+    return initialError("Slayt bulunamadı.");
+  }
+
   const { error } = await supabase
     .from("hero_slides")
     .update(parsed.data)
@@ -138,9 +150,64 @@ export async function updateHeroSlideAction(
     return initialError("Slayt güncellenemedi. Lütfen tekrar deneyin.");
   }
 
+  if (existingSlide.image_url !== parsed.data.image_url) {
+    await removeStorageFilesByUrls(supabase, [existingSlide.image_url]);
+  }
+
   revalidateSliderPages();
   revalidatePath(`/admin/slider/${id}`);
   redirect("/admin/slider?status=updated");
+}
+
+export async function deleteHeroSlideImageAction(
+  id: string,
+  imageUrl: string
+): Promise<HeroSlideFormState> {
+  const { supabase, user } = await getAuthenticatedClient();
+  if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  const { data: slide, error: fetchError } = await supabase
+    .from("hero_slides")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !slide) {
+    return initialError("Slayt bulunamadı.");
+  }
+
+  if (!slide.image_url) {
+    return { message: "", committedImageUrl: null };
+  }
+
+  if (slide.image_url !== imageUrl) {
+    return initialError("Slider görseli zaten değişmiş. Lütfen sayfayı yenileyin.");
+  }
+
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    imageUrl,
+  ]);
+
+  if (!storageCleanupSucceeded) {
+    return initialError(
+      "Slider görseli Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
+    );
+  }
+
+  const { error: updateError } = await supabase
+    .from("hero_slides")
+    .update({ image_url: "" })
+    .eq("id", id)
+    .eq("image_url", imageUrl);
+
+  if (updateError) {
+    console.error("Hero slide image remove error:", updateError);
+    return initialError("Slider görseli kaldırılamadı. Lütfen tekrar deneyin.");
+  }
+
+  revalidateSliderPages();
+  revalidatePath(`/admin/slider/${id}`);
+  return { message: "", committedImageUrl: null };
 }
 
 export async function deleteHeroSlideAction(
@@ -149,12 +216,24 @@ export async function deleteHeroSlideAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
 
+  const { data: slide, error: fetchError } = await supabase
+    .from("hero_slides")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !slide) {
+    return initialError("Slayt bulunamadı.");
+  }
+
   const { error } = await supabase.from("hero_slides").delete().eq("id", id);
 
   if (error) {
     console.error("Hero slide delete error:", error);
     return initialError("Slayt silinemedi. Lütfen tekrar deneyin.");
   }
+
+  await removeStorageFilesByUrls(supabase, [slide.image_url]);
 
   revalidateSliderPages();
   return { message: "" };

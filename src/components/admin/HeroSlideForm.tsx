@@ -12,6 +12,7 @@ interface HeroSlideFormProps {
     previousState: HeroSlideFormState,
     formData: FormData
   ) => Promise<HeroSlideFormState>;
+  deleteImageAction?: (imageUrl: string) => Promise<HeroSlideFormState>;
   slide?: HeroSlide;
 }
 
@@ -20,7 +21,11 @@ const initialState: HeroSlideFormState = { message: "" };
 const inputClassName =
   "w-full rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20";
 
-export default function HeroSlideForm({ action, slide }: HeroSlideFormProps) {
+export default function HeroSlideForm({
+  action,
+  deleteImageAction,
+  slide,
+}: HeroSlideFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [imageUrl, setImageUrl] = useState(slide?.image_url ?? "");
 
@@ -125,8 +130,10 @@ export default function HeroSlideForm({ action, slide }: HeroSlideFormProps) {
             <h2 className="mb-4 text-lg font-bold text-primary">Slider Görseli</h2>
             <ImageUploader
               currentImageUrl={imageUrl}
+              committedImageUrl={state.committedImageUrl}
               onImageUploaded={setImageUrl}
               onImageRemoved={() => setImageUrl("")}
+              onPersistedImageRemoved={deleteImageAction}
               folder="slider"
               aspectRatio="aspect-video"
             />

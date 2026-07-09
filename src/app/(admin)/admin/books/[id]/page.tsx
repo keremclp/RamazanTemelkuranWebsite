@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import BookForm from "@/components/admin/BookForm";
 import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types/database";
-import { updateBookAction } from "../actions";
+import { deleteBookCoverAction, updateBookAction } from "../actions";
 
 export const metadata: Metadata = {
   title: "Kitabı Düzenle",
@@ -27,6 +27,7 @@ export default async function EditBookPage({
   if (!book) notFound();
 
   const updateBook = updateBookAction.bind(null, id);
+  const deleteBookCover = deleteBookCoverAction.bind(null, id);
 
   return (
     <div className="space-y-6">
@@ -45,7 +46,11 @@ export default async function EditBookPage({
           “{book.title}” için içerik ve görsel bilgilerini güncelleyin.
         </p>
       </div>
-      <BookForm action={updateBook} book={book as Book} />
+      <BookForm
+        action={updateBook}
+        deleteCoverAction={deleteBookCover}
+        book={book as Book}
+      />
     </div>
   );
 }

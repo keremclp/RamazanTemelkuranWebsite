@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
 import type { Milestone, SocialLinks } from "@/lib/types/database";
 
 export interface AboutFormState {
   message: string;
   success?: string;
+  committedImageUrl?: string | null;
 }
 
 interface AboutPayload {
@@ -134,6 +136,22 @@ export async function updateAboutContentAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
 
+  let previousPortraitUrl: string | null = null;
+
+  if (id) {
+    const { data: existingContent, error: fetchError } = await supabase
+      .from("about_content")
+      .select("portrait_image_url")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !existingContent) {
+      return initialError("Hakkında içeriği bulunamadı.");
+    }
+
+    previousPortraitUrl = existingContent.portrait_image_url;
+  }
+
   const query = id
     ? supabase.from("about_content").update(parsed.data).eq("id", id)
     : supabase.from("about_content").insert(parsed.data);
@@ -145,6 +163,69 @@ export async function updateAboutContentAction(
     return initialError("Hakkında içeriği kaydedilemedi. Lütfen tekrar deneyin.");
   }
 
+  if (previousPortraitUrl !== parsed.data.portrait_image_url) {
+    await removeStorageFilesByUrls(supabase, [previousPortraitUrl]);
+  }
+
   revalidateAboutPages();
-  return { message: "", success: "Hakkında sayfası güncellendi." };
+  return {
+    message: "",
+    success: "Hakkında sayfası güncellendi.",
+    committedImageUrl: parsed.data.portrait_image_url,
+  };
+}
+
+export async function deleteAboutPortraitAction(
+  id: string | null,
+  imageUrl: string
+): Promise<AboutFormState> {
+  const { supabase, user } = await getAuthenticatedClient();
+  if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  const query = supabase
+    .from("about_content")
+    .select("id, portrait_image_url")
+    .eq("portrait_image_url", imageUrl)
+    .limit(1);
+
+  const { data: content, error: fetchError } = id
+    ? await query.eq("id", id).single()
+    : await query.maybeSingle();
+
+  if (fetchError || !content) {
+    console.error("About portrait lookup error:", fetchError);
+    return initialError("Portre görseli kontrol edilemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (!content.portrait_image_url) {
+    return { message: "", committedImageUrl: null };
+  }
+
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    imageUrl,
+  ]);
+
+  if (!storageCleanupSucceeded) {
+    return initialError(
+      "Portre görseli Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
+    );
+  }
+
+  const { error: updateError } = await supabase
+    .from("about_content")
+    .update({ portrait_image_url: null })
+    .eq("id", content.id)
+    .eq("portrait_image_url", imageUrl);
+
+  if (updateError) {
+    console.error("About portrait remove error:", updateError);
+    return initialError("Portre görseli kaldırılamadı. Lütfen tekrar deneyin.");
+  }
+
+  revalidateAboutPages();
+  return {
+    message: "",
+    success: "Portre görseli kaldırıldı.",
+    committedImageUrl: null,
+  };
 }

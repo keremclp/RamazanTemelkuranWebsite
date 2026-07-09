@@ -3,15 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
 import { slugify } from "@/lib/utils/helpers";
 
 export interface BookFormState {
   message: string;
+  committedImageUrl?: string | null;
 }
 
 interface BookPayload {
   title: string;
-  slug: string;
   description: string;
   cover_image_url: string | null;
   shopier_url: string;
@@ -19,7 +20,6 @@ interface BookPayload {
   publication_year: number | null;
   page_count: number | null;
   isbn: string | null;
-  category: string | null;
   display_order: number;
 }
 
@@ -53,7 +53,6 @@ async function getAuthenticatedClient() {
 
 function parseBookForm(formData: FormData): ParsedBookForm {
   const title = getString(formData, "title");
-  const slug = slugify(getString(formData, "slug") || title);
   const description = getString(formData, "description");
   const shopierUrl = getString(formData, "shopier_url");
   const publicationYear = getOptionalNumber(formData, "publication_year");
@@ -61,7 +60,9 @@ function parseBookForm(formData: FormData): ParsedBookForm {
   const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
 
   if (!title) return { error: "Kitap adı gereklidir." };
-  if (!slug) return { error: "Geçerli bir URL kısa adı gereklidir." };
+  if (!slugify(title)) {
+    return { error: "Kitap adından geçerli bir URL oluşturulamadı." };
+  }
   if (!description) return { error: "Kitap açıklaması gereklidir." };
 
   if (shopierUrl) {
@@ -81,10 +82,7 @@ function parseBookForm(formData: FormData): ParsedBookForm {
     return { error: "Yayın yılı geçerli bir yıl olmalıdır." };
   }
 
-  if (
-    Number.isNaN(pageCount) ||
-    (pageCount !== null && pageCount < 1)
-  ) {
+  if (Number.isNaN(pageCount) || (pageCount !== null && pageCount < 1)) {
     return { error: "Sayfa sayısı pozitif bir tam sayı olmalıdır." };
   }
 
@@ -95,7 +93,6 @@ function parseBookForm(formData: FormData): ParsedBookForm {
   return {
     data: {
       title,
-      slug,
       description,
       cover_image_url: getString(formData, "cover_image_url") || null,
       shopier_url: shopierUrl,
@@ -103,10 +100,44 @@ function parseBookForm(formData: FormData): ParsedBookForm {
       publication_year: publicationYear,
       page_count: pageCount,
       isbn: getString(formData, "isbn") || null,
-      category: getString(formData, "category") || null,
       display_order: displayOrder,
     },
   };
+}
+
+async function generateUniqueBookSlug(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  title: string,
+  currentBookId?: string
+) {
+  const baseSlug = slugify(title);
+  if (!baseSlug) return null;
+
+  const { data, error } = await supabase
+    .from("books")
+    .select("id, slug")
+    .like("slug", `${baseSlug}%`);
+
+  if (error) {
+    console.error("Book slug lookup error:", error);
+    return null;
+  }
+
+  const existingSlugs = new Set(
+    (data ?? [])
+      .filter((book) => book.id !== currentBookId)
+      .map((book) => book.slug)
+  );
+
+  let candidate = baseSlug;
+  let suffix = 2;
+
+  while (existingSlugs.has(candidate)) {
+    candidate = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
 }
 
 function revalidateBookPages(slug?: string) {
@@ -127,17 +158,22 @@ export async function createBookAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
 
-  const { error } = await supabase.from("books").insert(parsed.data);
+  const slug = await generateUniqueBookSlug(supabase, parsed.data.title);
+  if (!slug) return initialError("Kitap URL'si otomatik oluşturulamadı.");
+
+  const { error } = await supabase
+    .from("books")
+    .insert({ ...parsed.data, slug });
 
   if (error) {
     if (error.code === "23505") {
-      return initialError("Bu URL kısa adı başka bir kitap tarafından kullanılıyor.");
+      return initialError("Kitap URL'si otomatik oluşturulurken çakışma oluştu.");
     }
     console.error("Book create error:", error);
     return initialError("Kitap kaydedilemedi. Lütfen tekrar deneyin.");
   }
 
-  revalidateBookPages(parsed.data.slug);
+  revalidateBookPages(slug);
   redirect("/admin/books?status=created");
 }
 
@@ -154,26 +190,84 @@ export async function updateBookAction(
 
   const { data: existingBook } = await supabase
     .from("books")
-    .select("slug")
+    .select("slug, cover_image_url")
     .eq("id", id)
     .single();
 
+  const slug = await generateUniqueBookSlug(supabase, parsed.data.title, id);
+  if (!slug) return initialError("Kitap URL'si otomatik oluşturulamadı.");
+
   const { error } = await supabase
     .from("books")
-    .update(parsed.data)
+    .update({ ...parsed.data, slug })
     .eq("id", id);
 
   if (error) {
     if (error.code === "23505") {
-      return initialError("Bu URL kısa adı başka bir kitap tarafından kullanılıyor.");
+      return initialError("Kitap URL'si otomatik oluşturulurken çakışma oluştu.");
     }
     console.error("Book update error:", error);
     return initialError("Kitap güncellenemedi. Lütfen tekrar deneyin.");
   }
 
+  if (existingBook?.cover_image_url !== parsed.data.cover_image_url) {
+    await removeStorageFilesByUrls(supabase, [existingBook?.cover_image_url]);
+  }
+
   revalidateBookPages(existingBook?.slug);
-  revalidateBookPages(parsed.data.slug);
+  revalidateBookPages(slug);
   redirect("/admin/books?status=updated");
+}
+
+export async function deleteBookCoverAction(
+  id: string,
+  imageUrl: string
+): Promise<BookFormState> {
+  const { supabase, user } = await getAuthenticatedClient();
+  if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  const { data: book, error: fetchError } = await supabase
+    .from("books")
+    .select("slug, cover_image_url")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !book) {
+    console.error("Book cover lookup error:", fetchError);
+    return initialError("Kapak görseli kontrol edilemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (!book.cover_image_url) {
+    return { message: "", committedImageUrl: null };
+  }
+
+  if (book.cover_image_url !== imageUrl) {
+    return initialError("Kapak görseli zaten değişmiş. Lütfen sayfayı yenileyin.");
+  }
+
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    imageUrl,
+  ]);
+
+  if (!storageCleanupSucceeded) {
+    return initialError(
+      "Kapak görseli Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
+    );
+  }
+
+  const { error: updateError } = await supabase
+    .from("books")
+    .update({ cover_image_url: null })
+    .eq("id", id)
+    .eq("cover_image_url", imageUrl);
+
+  if (updateError) {
+    console.error("Book cover remove error:", updateError);
+    return initialError("Kapak görseli kaldırılamadı. Lütfen tekrar deneyin.");
+  }
+
+  revalidateBookPages(book.slug);
+  return { message: "", committedImageUrl: null };
 }
 
 export async function deleteBookAction(id: string): Promise<BookFormState> {
@@ -182,7 +276,7 @@ export async function deleteBookAction(id: string): Promise<BookFormState> {
 
   const { data: book } = await supabase
     .from("books")
-    .select("slug")
+    .select("slug, cover_image_url")
     .eq("id", id)
     .single();
 
@@ -192,6 +286,8 @@ export async function deleteBookAction(id: string): Promise<BookFormState> {
     console.error("Book delete error:", error);
     return initialError("Kitap silinemedi. Lütfen tekrar deneyin.");
   }
+
+  await removeStorageFilesByUrls(supabase, [book?.cover_image_url]);
 
   revalidateBookPages(book?.slug);
   return { message: "" };

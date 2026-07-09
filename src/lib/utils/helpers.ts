@@ -2,7 +2,6 @@
    Utility Helpers
    ============================================ */
 
-
 /**
  * Conditionally join class names. Lightweight alternative to clsx
  * when we don't want the dependency.
@@ -15,14 +14,27 @@ export function cn(...classes: (string | boolean | undefined | null)[]) {
  * Generate a URL-friendly slug from a string.
  */
 export function slugify(text: string): string {
+  const turkishMap: Record<string, string> = {
+    ç: "c",
+    Ç: "c",
+    ğ: "g",
+    Ğ: "g",
+    ı: "i",
+    I: "i",
+    İ: "i",
+    ö: "o",
+    Ö: "o",
+    ş: "s",
+    Ş: "s",
+    ü: "u",
+    Ü: "u",
+  };
+
   return text
+    .replace(/[çÇğĞıIİöÖşŞüÜ]/g, (char) => turkishMap[char] ?? char)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/ğ/g, "g")
-    .replace(/ü/g, "u")
-    .replace(/ş/g, "s")
-    .replace(/ı/g, "i")
-    .replace(/ö/g, "o")
-    .replace(/ç/g, "c")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
@@ -88,7 +100,7 @@ export function getYouTubeThumbnail(
  */
 export function truncate(text: string, length: number): string {
   if (text.length <= length) return text;
-  return text.slice(0, length).trimEnd() + "…";
+  return `${text.slice(0, length).trimEnd()}…`;
 }
 
 /**

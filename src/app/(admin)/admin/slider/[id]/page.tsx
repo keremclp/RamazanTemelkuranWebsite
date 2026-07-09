@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { HeroSlide } from "@/lib/types/database";
 import HeroSlideForm from "@/components/admin/HeroSlideForm";
-import { updateHeroSlideAction } from "../actions";
+import { deleteHeroSlideImageAction, updateHeroSlideAction } from "../actions";
 
 export const metadata: Metadata = {
   title: "Slaytı Düzenle",
@@ -28,6 +28,7 @@ export default async function EditHeroSlidePage({
 
   const slide = data as HeroSlide;
   const updateAction = updateHeroSlideAction.bind(null, slide.id);
+  const deleteImageAction = deleteHeroSlideImageAction.bind(null, slide.id);
 
   return (
     <div className="space-y-6">
@@ -47,7 +48,11 @@ export default async function EditHeroSlidePage({
         </p>
       </div>
 
-      <HeroSlideForm action={updateAction} slide={slide} />
+      <HeroSlideForm
+        action={updateAction}
+        deleteImageAction={deleteImageAction}
+        slide={slide}
+      />
     </div>
   );
 }

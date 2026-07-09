@@ -114,11 +114,6 @@ export default async function AdminBooksPage({
                   <h2 className="truncate text-lg font-bold text-primary">
                     {book.title}
                   </h2>
-                  {book.category && (
-                    <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-dark">
-                      {book.category}
-                    </span>
-                  )}
                 </div>
                 <p className="mt-1 text-sm text-muted">
                   {book.publisher || "Yayınevi belirtilmedi"}

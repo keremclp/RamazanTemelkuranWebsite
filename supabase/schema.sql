@@ -20,7 +20,6 @@ CREATE TABLE books (
   publication_year INTEGER,
   page_count INTEGER,
   isbn TEXT,
-  category TEXT,
   display_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -113,7 +112,6 @@ CREATE TABLE site_settings (
 -- INDEXES
 -- ============================================
 CREATE INDEX idx_books_slug ON books(slug);
-CREATE INDEX idx_books_category ON books(category);
 CREATE INDEX idx_books_display_order ON books(display_order);
 CREATE INDEX idx_media_event_id ON media(event_id);
 CREATE INDEX idx_media_type ON media(type);
@@ -203,6 +201,30 @@ CREATE POLICY "Admin can manage site settings" ON site_settings
   FOR ALL USING (auth.role() = 'authenticated');
 
 -- ============================================
+-- SUPABASE STORAGE
+-- ============================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('media', 'media', true)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+CREATE POLICY "Public can read media bucket files" ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'media');
+
+CREATE POLICY "Authenticated users can upload media files" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'media');
+
+CREATE POLICY "Authenticated users can update media files" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'media')
+  WITH CHECK (bucket_id = 'media');
+
+CREATE POLICY "Authenticated users can delete media files" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'media');
+
+-- ============================================
 -- SEED DATA (placeholder content)
 -- ============================================
 
@@ -231,7 +253,7 @@ VALUES (
 );
 
 -- Insert sample books
-INSERT INTO books (title, slug, description, shopier_url, publisher, publication_year, page_count, category, display_order)
+INSERT INTO books (title, slug, description, shopier_url, publisher, publication_year, page_count, display_order)
 VALUES
   (
     'Sessiz Fırtına',
@@ -241,7 +263,6 @@ VALUES
     'Örnek Yayınevi',
     2023,
     320,
-    'Roman',
     1
   ),
   (
@@ -252,7 +273,6 @@ VALUES
     'Örnek Yayınevi',
     2022,
     280,
-    'Roman',
     2
   ),
   (
@@ -263,7 +283,6 @@ VALUES
     'Örnek Yayınevi',
     2021,
     240,
-    'Deneme',
     3
   );
 

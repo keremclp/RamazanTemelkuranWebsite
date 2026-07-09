@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { AboutContent } from "@/lib/types/database";
 import AboutForm from "@/components/admin/AboutForm";
-import { updateAboutContentAction } from "./actions";
+import { deleteAboutPortraitAction, updateAboutContentAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "Hakkında",
@@ -19,6 +19,10 @@ export default async function AdminAboutPage() {
 
   const about = data as AboutContent | null;
   const action = updateAboutContentAction.bind(null, about?.id ?? null);
+  const deletePortraitAction = deleteAboutPortraitAction.bind(
+    null,
+    about?.id ?? null
+  );
 
   return (
     <div className="space-y-6">
@@ -40,7 +44,11 @@ export default async function AdminAboutPage() {
         </div>
       )}
 
-      <AboutForm action={action} about={about ?? undefined} />
+      <AboutForm
+        action={action}
+        deletePortraitAction={deletePortraitAction}
+        about={about ?? undefined}
+      />
     </div>
   );
 }

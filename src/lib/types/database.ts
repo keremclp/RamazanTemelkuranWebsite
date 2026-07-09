@@ -13,7 +13,6 @@ export interface Book {
   publication_year: number | null;
   page_count: number | null;
   isbn: string | null;
-  category: string | null;
   display_order: number;
   created_at: string;
   updated_at: string;

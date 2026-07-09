@@ -1,32 +1,57 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { getStorageObjectPath } from "@/lib/supabase/storage";
 import { Upload, X, Loader2 } from "lucide-react";
 
 interface ImageUploaderProps {
   currentImageUrl?: string | null;
+  committedImageUrl?: string | null;
   onImageUploaded: (url: string) => void;
   onImageRemoved?: () => void;
+  onPersistedImageRemoved?: (
+    url: string
+  ) => Promise<{ message: string; cancelled?: boolean }>;
   bucket?: string;
   folder?: string;
   className?: string;
   aspectRatio?: string;
+  frameClassName?: string;
+  imageSizes?: string;
+  previewAlt?: string;
+  showReplaceButton?: boolean;
+  replaceLabel?: string;
 }
 
 export default function ImageUploader({
   currentImageUrl,
+  committedImageUrl,
   onImageUploaded,
   onImageRemoved,
+  onPersistedImageRemoved,
   bucket = "media",
   folder = "uploads",
   className = "",
   aspectRatio = "aspect-[3/4]",
+  frameClassName,
+  imageSizes = "(max-width: 640px) 100vw, 400px",
+  previewAlt = "Yüklenen görsel",
+  showReplaceButton = false,
+  replaceLabel = "Değiştir",
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentImageUrl ?? null);
   const [error, setError] = useState<string | null>(null);
+  const persistedImageUrl = useRef(currentImageUrl ?? null);
+
+  useEffect(() => {
+    if (committedImageUrl !== undefined) {
+      persistedImageUrl.current = committedImageUrl;
+    }
+  }, [committedImageUrl]);
 
   const handleUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,33 +108,104 @@ export default function ImageUploader({
     [bucket, folder, onImageUploaded]
   );
 
-  function handleRemove() {
+  async function handleRemove() {
+    if (!preview || uploading || removing) return;
+
+    setError(null);
+
+    if (preview === persistedImageUrl.current && onPersistedImageRemoved) {
+      setRemoving(true);
+      const result = await onPersistedImageRemoved(preview);
+
+      if (result.cancelled) {
+        setRemoving(false);
+        return;
+      }
+
+      if (result.message) {
+        setError(result.message);
+        setRemoving(false);
+        return;
+      }
+
+      persistedImageUrl.current = null;
+      setPreview(null);
+      onImageRemoved?.();
+      setRemoving(false);
+      return;
+    }
+
+    if (preview !== persistedImageUrl.current) {
+      const objectPath = getStorageObjectPath(preview, bucket);
+
+      if (objectPath) {
+        setRemoving(true);
+        const supabase = createClient();
+        const { error: removeError } = await supabase.storage
+          .from(bucket)
+          .remove([objectPath]);
+
+        if (removeError) {
+          console.error("Upload cleanup error:", removeError);
+          setError("Görsel depolamadan silinemedi. Lütfen tekrar deneyin.");
+          setRemoving(false);
+          return;
+        }
+      }
+    }
+
     setPreview(null);
     onImageRemoved?.();
+    setRemoving(false);
   }
 
   return (
     <div className={`space-y-2 ${className}`}>
       <div
-        className={`relative ${aspectRatio} rounded-xl border-2 border-dashed border-border bg-secondary/50 overflow-hidden transition-colors hover:border-accent/40`}
+        className={
+          frameClassName ??
+          `relative ${aspectRatio} rounded-xl border-2 border-dashed border-border bg-secondary/50 overflow-hidden transition-colors hover:border-accent/40`
+        }
       >
         {preview ? (
           <>
             <Image
               src={preview}
-              alt="Yüklenen görsel"
+              alt={previewAlt}
               fill
               className="object-cover"
-              sizes="(max-width: 640px) 100vw, 400px"
+              sizes={imageSizes}
             />
             <button
               type="button"
               onClick={handleRemove}
+              disabled={removing}
               className="absolute top-2 right-2 p-1.5 bg-primary/80 text-white rounded-lg hover:bg-danger transition-colors"
               aria-label="Görseli kaldır"
             >
-              <X size={16} />
+              {removing ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <X size={16} />
+              )}
             </button>
+            {showReplaceButton && (
+              <label className="absolute bottom-2 left-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary/80 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-accent">
+                {uploading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Upload size={14} />
+                )}
+                {replaceLabel}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUpload}
+                  className="hidden"
+                  disabled={uploading || removing}
+                />
+              </label>
+            )}
           </>
         ) : (
           <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer gap-2 text-muted hover:text-accent transition-colors">
@@ -129,7 +225,7 @@ export default function ImageUploader({
               accept="image/*"
               onChange={handleUpload}
               className="hidden"
-              disabled={uploading}
+              disabled={uploading || removing}
             />
           </label>
         )}

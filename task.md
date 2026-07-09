@@ -13,7 +13,7 @@
 
 ## Phase 2 — Public Pages ✅
 - [x] Home page (HeroSlider, Featured Books, Events Preview, Author Spotlight, CTA)
-- [x] Books page (grid + category filter via BookFilter component)
+- [x] Books page (grid via BookFilter component)
 - [x] Book detail page (`/books/[slug]` with generateMetadata)
 - [x] Gallery page (GalleryFilter + Lightbox components)
 - [x] About page (bio, milestones timeline, social links)
@@ -30,6 +30,8 @@
 - [x] About page editor
 - [x] Contact messages viewer
 - [x] Site settings
+- [x] Supabase Storage cleanup for removed and replaced images
+- [x] In-place gallery photo replacement and video URL editing
 
 ## Phase 4 — Polish & Deploy
 - [ ] SEO: metadata, structured data, sitemap, robots.txt

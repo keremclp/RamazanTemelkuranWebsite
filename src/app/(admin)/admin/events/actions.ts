@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
 import { extractYouTubeId } from "@/lib/utils/helpers";
 
 export interface EventFormState {
@@ -12,6 +13,7 @@ export interface EventFormState {
 export interface MediaFormState {
   message: string;
   success?: string;
+  committedImageUrl?: string | null;
 }
 
 interface EventPayload {
@@ -189,6 +191,16 @@ export async function deleteEventAction(id: string): Promise<EventFormState> {
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialEventError("Bu işlem için yeniden giriş yapmalısınız.");
 
+  const { data: eventMedia, error: mediaFetchError } = await supabase
+    .from("media")
+    .select("url, thumbnail_url")
+    .eq("event_id", id);
+
+  if (mediaFetchError) {
+    console.error("Event media fetch before delete error:", mediaFetchError);
+    return initialEventError("Etkinliğe bağlı medya okunamadı. Lütfen tekrar deneyin.");
+  }
+
   const { error: mediaError } = await supabase
     .from("media")
     .delete()
@@ -205,6 +217,11 @@ export async function deleteEventAction(id: string): Promise<EventFormState> {
     console.error("Event delete error:", error);
     return initialEventError("Etkinlik silinemedi. Lütfen tekrar deneyin.");
   }
+
+  await removeStorageFilesByUrls(
+    supabase,
+    (eventMedia ?? []).flatMap((media) => [media.url, media.thumbnail_url])
+  );
 
   revalidateEventPages(id);
   return { message: "" };
@@ -241,7 +258,10 @@ export async function createMediaAction(
 
     if (eventError) {
       console.error("Homepage media set after create error:", eventError);
-      return initialMediaError("Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.");
+      return {
+        message: "Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.",
+        committedImageUrl: parsed.data.url,
+      };
     }
   }
 
@@ -252,6 +272,8 @@ export async function createMediaAction(
       shouldUseOnHomepage && parsed.data.type === "photo"
         ? "Medya eklendi ve ana sayfa görseli olarak seçildi."
         : "Medya başarıyla eklendi.",
+    committedImageUrl:
+      parsed.data.type === "photo" ? parsed.data.url : undefined,
   };
 }
 
@@ -261,6 +283,28 @@ export async function deleteMediaAction(
 ): Promise<MediaFormState> {
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialMediaError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  const { data: media, error: fetchError } = await supabase
+    .from("media")
+    .select("id, url, thumbnail_url")
+    .eq("id", mediaId)
+    .eq("event_id", eventId)
+    .single();
+
+  if (fetchError || !media) {
+    return initialMediaError("Medya kaydı bulunamadı.");
+  }
+
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    media.url,
+    media.thumbnail_url,
+  ]);
+
+  if (!storageCleanupSucceeded) {
+    return initialMediaError(
+      "Medya Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
+    );
+  }
 
   await supabase
     .from("events")
@@ -291,12 +335,23 @@ export async function deleteGalleryMediaAction(
 
   const { data: media, error: fetchError } = await supabase
     .from("media")
-    .select("id, event_id")
+    .select("id, event_id, url, thumbnail_url")
     .eq("id", mediaId)
     .single();
 
   if (fetchError || !media) {
     return initialMediaError("Medya kaydı bulunamadı.");
+  }
+
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    media.url,
+    media.thumbnail_url,
+  ]);
+
+  if (!storageCleanupSucceeded) {
+    return initialMediaError(
+      "Medya Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
+    );
   }
 
   if (media.event_id) {
@@ -357,7 +412,10 @@ export async function createGalleryMediaAction(
 
     if (eventError) {
       console.error("Gallery homepage media set error:", eventError);
-      return initialMediaError("Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.");
+      return {
+        message: "Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.",
+        committedImageUrl: parsed.data.url,
+      };
     }
   }
 
@@ -368,6 +426,8 @@ export async function createGalleryMediaAction(
       shouldUseOnHomepage && parsed.data.type === "photo"
         ? "Medya eklendi ve ana sayfa görseli olarak seçildi."
         : "Medya başarıyla eklendi.",
+    committedImageUrl:
+      parsed.data.type === "photo" ? parsed.data.url : undefined,
   };
 }
 
@@ -377,11 +437,16 @@ export async function updateGalleryMediaAction(
   formData: FormData
 ): Promise<MediaFormState> {
   const eventId = getString(formData, "event_id");
+  const url = getString(formData, "url");
   const caption = getString(formData, "caption") || null;
   const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
   const shouldUseOnHomepage = getString(formData, "use_on_homepage") === "on";
 
   if (!eventId) return initialMediaError("Etkinlik seçmelisiniz.");
+  if (!url) return initialMediaError("Medya bağlantısı gereklidir.");
+  if (!isValidUrl(url)) {
+    return initialMediaError("Medya bağlantısı geçerli bir URL olmalıdır.");
+  }
   if (Number.isNaN(displayOrder) || displayOrder < 0) {
     return initialMediaError("Görüntülenme sırası sıfır veya daha büyük olmalıdır.");
   }
@@ -392,7 +457,7 @@ export async function updateGalleryMediaAction(
   const [{ data: existingMedia }, { data: event }] = await Promise.all([
     supabase
       .from("media")
-      .select("id, event_id, type")
+      .select("id, event_id, type, url, thumbnail_url")
       .eq("id", mediaId)
       .single(),
     supabase.from("events").select("id").eq("id", eventId).single(),
@@ -400,11 +465,15 @@ export async function updateGalleryMediaAction(
 
   if (!existingMedia) return initialMediaError("Medya kaydı bulunamadı.");
   if (!event) return initialMediaError("Seçilen etkinlik bulunamadı.");
+  if (existingMedia.type === "video" && !extractYouTubeId(url)) {
+    return initialMediaError("Video için geçerli bir YouTube bağlantısı girin.");
+  }
 
   const { error } = await supabase
     .from("media")
     .update({
       event_id: eventId,
+      url,
       caption,
       display_order: displayOrder,
     })
@@ -413,6 +482,13 @@ export async function updateGalleryMediaAction(
   if (error) {
     console.error("Gallery media update error:", error);
     return initialMediaError("Medya güncellenemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (existingMedia.type === "photo" && existingMedia.url !== url) {
+    await removeStorageFilesByUrls(supabase, [
+      existingMedia.url,
+      existingMedia.thumbnail_url,
+    ]);
   }
 
   if (existingMedia.event_id && existingMedia.event_id !== eventId) {
@@ -442,7 +518,11 @@ export async function updateGalleryMediaAction(
 
   revalidateEventPages(eventId);
   if (existingMedia.event_id) revalidateEventPages(existingMedia.event_id);
-  return { message: "", success: "Medya güncellendi." };
+  return {
+    message: "",
+    success: "Medya güncellendi.",
+    committedImageUrl: existingMedia.type === "photo" ? url : undefined,
+  };
 }
 
 export async function setEventHomepageMediaAction(

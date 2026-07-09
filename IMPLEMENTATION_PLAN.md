@@ -133,7 +133,6 @@ app/
 - publication_year (int)
 - page_count (int)
 - isbn (text)
-- category (text)
 - display_order (int)
 - created_at (timestamp)
 - updated_at (timestamp)

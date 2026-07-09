@@ -4,8 +4,6 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Save } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
-import { BOOK_CATEGORIES } from "@/lib/utils/constants";
-import { slugify } from "@/lib/utils/helpers";
 import type { Book } from "@/lib/types/database";
 import type { BookFormState } from "@/app/(admin)/admin/books/actions";
 
@@ -14,6 +12,7 @@ interface BookFormProps {
     previousState: BookFormState,
     formData: FormData
   ) => Promise<BookFormState>;
+  deleteCoverAction?: (imageUrl: string) => Promise<BookFormState>;
   book?: Book;
 }
 
@@ -22,19 +21,11 @@ const initialState: BookFormState = { message: "" };
 const inputClassName =
   "w-full rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20";
 
-export default function BookForm({ action, book }: BookFormProps) {
+export default function BookForm({ action, deleteCoverAction, book }: BookFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
-  const [title, setTitle] = useState(book?.title ?? "");
-  const [slug, setSlug] = useState(book?.slug ?? "");
-  const [slugWasEdited, setSlugWasEdited] = useState(Boolean(book));
   const [coverImageUrl, setCoverImageUrl] = useState(
     book?.cover_image_url ?? ""
   );
-
-  function handleTitleChange(value: string) {
-    setTitle(value);
-    if (!slugWasEdited) setSlug(slugify(value));
-  }
 
   return (
     <form action={formAction} className="space-y-6">
@@ -51,32 +42,27 @@ export default function BookForm({ action, book }: BookFormProps) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-6">
           <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
-            <h2 className="mb-5 text-lg font-bold text-primary">Kitap Bilgileri</h2>
+            <h2 className="mb-5 text-lg font-bold text-primary">
+              Kitap Bilgileri
+            </h2>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Kitap adı" htmlFor="title" required>
                 <input
                   id="title"
                   name="title"
-                  value={title}
-                  onChange={(event) => handleTitleChange(event.target.value)}
+                  defaultValue={book?.title ?? ""}
                   className={inputClassName}
                   required
                   disabled={pending}
                 />
               </Field>
 
-              <Field label="URL kısa adı" htmlFor="slug" required>
+              <Field label="Yayınevi" htmlFor="publisher">
                 <input
-                  id="slug"
-                  name="slug"
-                  value={slug}
-                  onChange={(event) => {
-                    setSlugWasEdited(true);
-                    setSlug(slugify(event.target.value));
-                  }}
+                  id="publisher"
+                  name="publisher"
+                  defaultValue={book?.publisher ?? ""}
                   className={inputClassName}
-                  placeholder="kitap-adi"
-                  required
                   disabled={pending}
                 />
               </Field>
@@ -93,33 +79,6 @@ export default function BookForm({ action, book }: BookFormProps) {
                   />
                 </Field>
               </div>
-
-              <Field label="Kategori" htmlFor="category">
-                <select
-                  id="category"
-                  name="category"
-                  defaultValue={book?.category ?? ""}
-                  className={inputClassName}
-                  disabled={pending}
-                >
-                  <option value="">Kategori seçin</option>
-                  {BOOK_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Yayınevi" htmlFor="publisher">
-                <input
-                  id="publisher"
-                  name="publisher"
-                  defaultValue={book?.publisher ?? ""}
-                  className={inputClassName}
-                  disabled={pending}
-                />
-              </Field>
 
               <Field label="Yayın yılı" htmlFor="publication_year">
                 <input
@@ -187,11 +146,15 @@ export default function BookForm({ action, book }: BookFormProps) {
 
         <aside className="space-y-4">
           <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)]">
-            <h2 className="mb-4 text-lg font-bold text-primary">Kapak Görseli</h2>
+            <h2 className="mb-4 text-lg font-bold text-primary">
+              Kapak Görseli
+            </h2>
             <ImageUploader
               currentImageUrl={coverImageUrl}
+              committedImageUrl={state.committedImageUrl}
               onImageUploaded={setCoverImageUrl}
               onImageRemoved={() => setCoverImageUrl("")}
+              onPersistedImageRemoved={deleteCoverAction}
               folder="books"
             />
             <input
@@ -220,7 +183,11 @@ export default function BookForm({ action, book }: BookFormProps) {
           ) : (
             <Save size={18} />
           )}
-          {pending ? "Kaydediliyor..." : book ? "Değişiklikleri Kaydet" : "Kitabı Kaydet"}
+          {pending
+            ? "Kaydediliyor..."
+            : book
+              ? "Değişiklikleri Kaydet"
+              : "Kitabı Kaydet"}
         </button>
       </div>
     </form>

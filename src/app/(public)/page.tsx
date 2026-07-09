@@ -29,9 +29,9 @@ const fallbackSlides: HeroSlide[] = [
 ];
 
 const fallbackBooks: Partial<Book>[] = [
-  { id: "fb-1", title: "Kitap Başlığı 1", slug: "kitap-1", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Roman", cover_image_url: null, display_order: 1 },
-  { id: "fb-2", title: "Kitap Başlığı 2", slug: "kitap-2", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Deneme", cover_image_url: null, display_order: 2 },
-  { id: "fb-3", title: "Kitap Başlığı 3", slug: "kitap-3", description: "Bu kitabın kısa açıklaması burada yer alacak.", category: "Şiir", cover_image_url: null, display_order: 3 },
+  { id: "fb-1", title: "Kitap Başlığı 1", slug: "kitap-1", description: "Bu kitabın kısa açıklaması burada yer alacak.", cover_image_url: null, display_order: 1 },
+  { id: "fb-2", title: "Kitap Başlığı 2", slug: "kitap-2", description: "Bu kitabın kısa açıklaması burada yer alacak.", cover_image_url: null, display_order: 2 },
+  { id: "fb-3", title: "Kitap Başlığı 3", slug: "kitap-3", description: "Bu kitabın kısa açıklaması burada yer alacak.", cover_image_url: null, display_order: 3 },
 ];
 
 const fallbackEvents: Partial<HomeEvent>[] = [
@@ -207,11 +207,6 @@ export default async function HomePage() {
                   )}
                 </div>
                 <div className="p-6 space-y-3">
-                  {book.category && (
-                    <span className="text-xs font-medium text-accent uppercase tracking-wider">
-                      {book.category}
-                    </span>
-                  )}
                   <h3 className="text-lg font-bold group-hover:text-accent transition-colors text-primary">
                     {book.title}
                   </h3>

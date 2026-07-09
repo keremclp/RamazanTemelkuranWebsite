@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpen, ExternalLink, ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types/database";
 
@@ -28,7 +28,9 @@ export async function generateMetadata({
 
   return {
     title: book.title,
-    description: book.description?.slice(0, 160) || `${book.title} — Ramazan Temelkuran`,
+    description:
+      book.description?.slice(0, 160) ||
+      `${book.title} - Ramazan Temelkuran`,
   };
 }
 
@@ -50,36 +52,28 @@ export default async function BookDetailPage({
 
   const typedBook = book as Book;
 
-  // Fetch related books (same category, excluding current, max 3)
-  let relatedBooks: Book[] = [];
-  if (typedBook.category) {
-    const { data } = await supabase
-      .from("books")
-      .select("*")
-      .eq("category", typedBook.category)
-      .neq("id", typedBook.id)
-      .order("display_order", { ascending: true })
-      .limit(3);
+  const { data: relatedData } = await supabase
+    .from("books")
+    .select("*")
+    .neq("id", typedBook.id)
+    .order("display_order", { ascending: true })
+    .limit(3);
 
-    relatedBooks = (data as Book[]) || [];
-  }
+  const relatedBooks = (relatedData as Book[] | null) ?? [];
 
   return (
     <section className="section-padding">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Link */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <Link
           href="/books"
-          className="inline-flex items-center gap-2 text-muted hover:text-accent transition-colors mb-8 group"
+          className="group mb-8 inline-flex items-center gap-2 text-muted transition-colors hover:text-accent"
         >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span className="text-sm font-medium">Tüm Kitaplar</span>
         </Link>
 
-        {/* Book Detail */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-fade-in-up">
-          {/* Cover Image */}
-          <div className="relative aspect-[3/4] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card-hover)]">
+        <div className="grid grid-cols-1 gap-12 animate-fade-in-up lg:grid-cols-2">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card-hover)]">
             {typedBook.cover_image_url ? (
               <Image
                 src={typedBook.cover_image_url}
@@ -90,92 +84,74 @@ export default async function BookDetailPage({
                 priority
               />
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/30 to-primary/20 flex items-center justify-center">
-                <BookOpen className="w-24 h-24 text-accent/50" />
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/30 to-primary/20">
+                <BookOpen className="h-24 w-24 text-accent/50" />
               </div>
             )}
           </div>
 
-          {/* Book Info */}
           <div className="flex flex-col justify-center">
-            {/* Category Badge */}
-            {typedBook.category && (
-              <span className="inline-block bg-accent/10 text-accent text-sm font-semibold px-4 py-1.5 rounded-full mb-4 w-fit">
-                {typedBook.category}
-              </span>
-            )}
-
-            <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-heading)] text-primary mb-6">
+            <h1 className="mb-6 text-3xl font-bold text-primary md:text-4xl font-[family-name:var(--font-heading)]">
               {typedBook.title}
             </h1>
 
-            {/* Description */}
             {typedBook.description && (
-              <div className="text-primary/80 leading-relaxed mb-8 space-y-4">
+              <div className="mb-8 space-y-4 leading-relaxed text-primary/80">
                 {typedBook.description.split("\n\n").map((paragraph, i) => (
                   <p key={i}>{paragraph}</p>
                 ))}
               </div>
             )}
 
-            {/* Book Details Table */}
-            <div className="border-t border-border pt-6 mb-8 space-y-3">
+            <div className="mb-8 space-y-3 border-t border-border pt-6">
               {typedBook.publisher && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted font-medium">Yayınevi</span>
-                  <span className="text-primary">{typedBook.publisher}</span>
-                </div>
+                <BookInfoRow label="Yayınevi" value={typedBook.publisher} />
               )}
               {typedBook.publication_year && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted font-medium">Yayın Yılı</span>
-                  <span className="text-primary">{typedBook.publication_year}</span>
-                </div>
+                <BookInfoRow
+                  label="Yayın Yılı"
+                  value={String(typedBook.publication_year)}
+                />
               )}
               {typedBook.page_count && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted font-medium">Sayfa Sayısı</span>
-                  <span className="text-primary">{typedBook.page_count}</span>
-                </div>
+                <BookInfoRow
+                  label="Sayfa Sayısı"
+                  value={String(typedBook.page_count)}
+                />
               )}
               {typedBook.isbn && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted font-medium">ISBN</span>
-                  <span className="text-primary font-mono text-xs">{typedBook.isbn}</span>
-                </div>
+                <BookInfoRow label="ISBN" value={typedBook.isbn} isMono />
               )}
             </div>
 
-            {/* CTA Button */}
             {typedBook.shopier_url && (
               <a
                 href={typedBook.shopier_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-[var(--radius-md)] bg-accent text-white text-lg font-semibold hover:bg-accent-dark transition-all duration-[var(--transition-base)] shadow-md hover:shadow-lg w-full sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2.5 rounded-[var(--radius-md)] bg-accent px-8 py-4 text-lg font-semibold text-white shadow-md transition-all duration-[var(--transition-base)] hover:bg-accent-dark hover:shadow-lg sm:w-auto"
               >
-                <BookOpen className="w-5 h-5" />
+                <BookOpen className="h-5 w-5" />
                 Shopier&apos;den Satın Al
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="h-4 w-4" />
               </a>
             )}
           </div>
         </div>
 
-        {/* Related Books */}
         {relatedBooks.length > 0 && (
           <div className="mt-24">
-            <h2 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-primary mb-8 flex items-center gap-3">
-              <span className="w-8 h-0.5 bg-accent"></span>
-              Benzer Kitaplar
+            <h2 className="mb-8 flex items-center gap-3 text-2xl font-bold text-primary font-[family-name:var(--font-heading)]">
+              <span className="h-0.5 w-8 bg-accent" />
+              Diğer Kitaplar
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               {relatedBooks.map((related) => (
                 <Link
                   key={related.id}
                   href={`/books/${related.slug}`}
-                  className="group bg-surface rounded-[var(--radius-lg)] overflow-hidden shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1 transition-all duration-300"
+                  className="group overflow-hidden rounded-[var(--radius-lg)] bg-surface shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)]"
                 >
                   <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-accent/20 to-primary/10">
                     {related.cover_image_url ? (
@@ -183,24 +159,19 @@ export default async function BookDetailPage({
                         src={related.cover_image_url}
                         alt={related.title}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <BookOpen className="w-12 h-12 text-accent/50" />
+                        <BookOpen className="h-12 w-12 text-accent/50" />
                       </div>
                     )}
                   </div>
                   <div className="p-5">
-                    <h3 className="font-bold font-[family-name:var(--font-heading)] text-primary group-hover:text-accent transition-colors">
+                    <h3 className="font-bold text-primary transition-colors group-hover:text-accent font-[family-name:var(--font-heading)]">
                       {related.title}
                     </h3>
-                    {related.category && (
-                      <span className="text-xs text-muted mt-1 block">
-                        {related.category}
-                      </span>
-                    )}
                   </div>
                 </Link>
               ))}
@@ -209,5 +180,24 @@ export default async function BookDetailPage({
         )}
       </div>
     </section>
+  );
+}
+
+function BookInfoRow({
+  label,
+  value,
+  isMono,
+}: {
+  label: string;
+  value: string;
+  isMono?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="font-medium text-muted">{label}</span>
+      <span className={isMono ? "font-mono text-xs text-primary" : "text-primary"}>
+        {value}
+      </span>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ interface AboutFormProps {
     previousState: AboutFormState,
     formData: FormData
   ) => Promise<AboutFormState>;
+  deletePortraitAction?: (imageUrl: string) => Promise<AboutFormState>;
   about?: AboutContent;
 }
 
@@ -39,7 +40,11 @@ const emptyMilestone: Milestone = {
   description: "",
 };
 
-export default function AboutForm({ action, about }: AboutFormProps) {
+export default function AboutForm({
+  action,
+  deletePortraitAction,
+  about,
+}: AboutFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [portraitImageUrl, setPortraitImageUrl] = useState(
     about?.portrait_image_url ?? ""
@@ -302,8 +307,10 @@ export default function AboutForm({ action, about }: AboutFormProps) {
             </h2>
             <ImageUploader
               currentImageUrl={portraitImageUrl}
+              committedImageUrl={state.committedImageUrl}
               onImageUploaded={setPortraitImageUrl}
               onImageRemoved={() => setPortraitImageUrl("")}
+              onPersistedImageRemoved={deletePortraitAction}
               folder="about"
               aspectRatio="aspect-[3/4]"
             />

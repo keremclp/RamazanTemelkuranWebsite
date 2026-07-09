@@ -5,7 +5,7 @@ import BookFilter from "@/components/public/BookFilter";
 
 export const metadata: Metadata = {
   title: "Kitaplar",
-  description: "Ramazan Temelkuran'ın tüm kitapları. Roman, deneme ve daha fazlası.",
+  description: "Ramazan Temelkuran'ın tüm kitapları.",
 };
 
 export default async function BooksPage() {
@@ -18,27 +18,20 @@ export default async function BooksPage() {
 
   const allBooks: Book[] = books || [];
 
-  // Extract unique categories from the data
-  const categories = Array.from(
-    new Set(allBooks.map((b) => b.category).filter(Boolean))
-  ) as string[];
-
   return (
     <section className="section-padding">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-heading)] text-primary mb-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 text-center animate-fade-in-up">
+          <h1 className="mb-4 text-4xl font-bold text-primary md:text-5xl font-[family-name:var(--font-heading)]">
             Kitaplar
           </h1>
-          <div className="w-16 h-1 bg-accent mx-auto mb-4"></div>
-          <p className="text-muted text-lg max-w-2xl mx-auto">
+          <div className="mx-auto mb-4 h-1 w-16 bg-accent" />
+          <p className="mx-auto max-w-2xl text-lg text-muted">
             Ramazan Temelkuran&apos;ın kaleme aldığı tüm eserleri keşfedin.
           </p>
         </div>
 
-        {/* Filter + Grid (client component) */}
-        <BookFilter books={allBooks} categories={categories} />
+        <BookFilter books={allBooks} />
       </div>
     </section>
   );

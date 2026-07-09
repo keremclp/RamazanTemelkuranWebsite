@@ -149,6 +149,7 @@ function MediaCreateForm({
           <>
             <ImageUploader
               currentImageUrl={photoUrl}
+              committedImageUrl={state.committedImageUrl}
               onImageUploaded={setPhotoUrl}
               onImageRemoved={() => setPhotoUrl("")}
               folder="events"

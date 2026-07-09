@@ -112,7 +112,7 @@ export default function AdminGalleryLibrary({
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {filteredMedia.map((item) => (
               <GalleryMediaCard key={item.id} media={item} events={events} />
             ))}
@@ -213,6 +213,7 @@ function MediaCreateForm({
           <>
             <ImageUploader
               currentImageUrl={photoUrl}
+              committedImageUrl={state.committedImageUrl}
               onImageUploaded={setPhotoUrl}
               onImageRemoved={() => setPhotoUrl("")}
               folder="events"
@@ -289,9 +290,29 @@ function GalleryMediaCard({
   const router = useRouter();
   const [deletePending, startDeleteTransition] = useTransition();
   const [deleteError, setDeleteError] = useState("");
+  const [photoUrl, setPhotoUrl] = useState(
+    media.type === "photo" ? media.url : ""
+  );
   const thumbnailUrl =
-    media.type === "video" ? getYouTubeThumbnail(media.url) : media.url;
+    media.type === "video" ? getYouTubeThumbnail(media.url) : photoUrl;
   const isHomepageMedia = media.event?.homepage_media_id === media.id;
+
+  async function handlePersistedPhotoRemoved() {
+    const confirmed = window.confirm(
+      "Bu fotoğraf medya kaydını ve Supabase dosyasını kalıcı olarak siler. Devam edilsin mi?"
+    );
+
+    if (!confirmed) return { message: "", cancelled: true };
+
+    const result = await deleteGalleryMediaAction(media.id);
+    if (result.message) {
+      setDeleteError(result.message);
+      return result;
+    }
+
+    router.refresh();
+    return result;
+  }
 
   function handleDelete() {
     const confirmed = window.confirm(
@@ -312,22 +333,36 @@ function GalleryMediaCard({
 
   return (
     <article
-      className={`grid overflow-hidden rounded-2xl border bg-secondary/30 lg:grid-cols-[280px_minmax(0,1fr)] ${
+      className={`overflow-hidden rounded-2xl border bg-secondary/30 ${
         isHomepageMedia ? "border-accent/50 ring-2 ring-accent/10" : "border-border/70"
       }`}
     >
-      <div className="relative aspect-video bg-primary/5 lg:aspect-auto">
-        {thumbnailUrl ? (
+      <div className="relative aspect-video bg-primary/5">
+        {media.type === "photo" ? (
+          <ImageUploader
+            currentImageUrl={photoUrl}
+            committedImageUrl={media.url}
+            onImageUploaded={setPhotoUrl}
+            onImageRemoved={() => setPhotoUrl("")}
+            onPersistedImageRemoved={handlePersistedPhotoRemoved}
+            folder="events"
+            frameClassName="relative aspect-video overflow-hidden bg-primary/5"
+            imageSizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
+            previewAlt={media.caption || media.event?.title || "Fotoğraf"}
+            showReplaceButton
+            replaceLabel="Yeni fotoğraf"
+          />
+        ) : thumbnailUrl ? (
           <Image
             src={thumbnailUrl}
             alt={media.caption || media.event?.title || ""}
             fill
             className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 280px"
+            sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
           />
         ) : (
-          <div className="flex h-full min-h-48 items-center justify-center text-muted/40">
-            {media.type === "photo" ? <ImageIcon size={30} /> : <Video size={30} />}
+          <div className="flex h-full items-center justify-center text-muted/40">
+            <Video size={30} />
           </div>
         )}
 
@@ -359,7 +394,12 @@ function GalleryMediaCard({
           </div>
         )}
 
-        <MediaEditForm media={media} events={events} />
+        <MediaEditForm
+          media={media}
+          events={events}
+          photoUrl={photoUrl}
+          setPhotoUrl={setPhotoUrl}
+        />
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-3">
           <a
@@ -410,9 +450,13 @@ function GalleryMediaCard({
 function MediaEditForm({
   media,
   events,
+  photoUrl,
+  setPhotoUrl,
 }: {
   media: AdminGalleryMedia;
   events: Pick<Event, "id" | "title" | "event_date" | "homepage_media_id">[];
+  photoUrl: string;
+  setPhotoUrl: React.Dispatch<React.SetStateAction<string>>;
 }) {
   const router = useRouter();
   const action = updateGalleryMediaAction.bind(null, media.id);
@@ -422,11 +466,40 @@ function MediaEditForm({
     if (state.success) router.refresh();
   }, [router, state.success]);
 
+  useEffect(() => {
+    if (state.committedImageUrl !== undefined) {
+      setPhotoUrl(state.committedImageUrl ?? "");
+    }
+  }, [setPhotoUrl, state.committedImageUrl]);
+
   return (
     <form action={formAction} className="space-y-3">
       <FormMessage state={state} />
 
       <div className="grid gap-3 sm:grid-cols-2">
+        {media.type === "photo" ? (
+          <input type="hidden" name="url" value={photoUrl} />
+        ) : (
+          <div className="sm:col-span-2">
+            <Field
+              label="YouTube bağlantısı"
+              htmlFor={`url_${media.id}`}
+              required
+            >
+              <input
+                id={`url_${media.id}`}
+                name="url"
+                type="url"
+                defaultValue={media.url}
+                className={inputClassName}
+                placeholder="https://www.youtube.com/watch?v=..."
+                required
+                disabled={pending}
+              />
+            </Field>
+          </div>
+        )}
+
         <Field label="Etkinlik" htmlFor={`event_${media.id}`} required>
           <select
             id={`event_${media.id}`}
@@ -479,7 +552,7 @@ function MediaEditForm({
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || (media.type === "photo" && !photoUrl)}
         className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
       >
         {pending ? (
