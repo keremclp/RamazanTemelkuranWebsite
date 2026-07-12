@@ -9,6 +9,7 @@ interface FormData {
   email: string;
   subject: string;
   message: string;
+  website: string;
 }
 
 interface FormErrors {
@@ -24,6 +25,7 @@ export default function ContactForm() {
     email: "",
     subject: "",
     message: "",
+    website: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -70,7 +72,7 @@ export default function ContactForm() {
       }
 
       setStatus("success");
-      setFormData({ name: "", email: "", subject: "", message: "" });
+      setFormData({ name: "", email: "", subject: "", message: "", website: "" });
     } catch (err) {
       setStatus("error");
       setErrorMessage(
@@ -111,6 +113,19 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      <div className="sr-only" aria-hidden="true">
+        <label htmlFor="website">Website</label>
+        <input
+          type="text"
+          id="website"
+          name="website"
+          value={formData.website}
+          onChange={handleChange}
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       {/* Error Banner */}
       {status === "error" && (
         <div className="flex items-center gap-3 p-4 bg-danger/10 border border-danger/30 rounded-[var(--radius-md)] text-danger animate-fade-in">

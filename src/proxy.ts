@@ -40,19 +40,38 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect admin routes (except /admin/login)
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
   const isLoginPage = request.nextUrl.pathname === "/admin/login";
+  let isAdmin = false;
 
-  if (isAdminRoute && !isLoginPage && !user) {
-    const loginUrl = new URL("/admin/login", request.nextUrl);
-    return NextResponse.redirect(loginUrl);
+  if (user) {
+    const { data, error } = await supabase.rpc("is_admin");
+    isAdmin = !error && data === true;
   }
 
-  // Redirect authenticated users away from login page
-  if (isLoginPage && user) {
+  function redirectWithSessionCookies(url: URL) {
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
+    });
+    return response;
+  }
+
+  if (isAdminRoute && !isLoginPage && (!user || !isAdmin)) {
+    if (user) {
+      await supabase.auth.signOut({ scope: "local" });
+    }
+    const loginUrl = new URL("/admin/login", request.nextUrl);
+    return redirectWithSessionCookies(loginUrl);
+  }
+
+  if (isLoginPage && user && isAdmin) {
     const adminUrl = new URL("/admin", request.nextUrl);
-    return NextResponse.redirect(adminUrl);
+    return redirectWithSessionCookies(adminUrl);
+  }
+
+  if (isLoginPage && user && !isAdmin) {
+    await supabase.auth.signOut({ scope: "local" });
   }
 
   return supabaseResponse;

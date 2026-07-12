@@ -34,6 +34,24 @@ export default function AdminLoginPage() {
         return;
       }
 
+      const { data: isAdmin, error: authorizationError } =
+        await supabase.rpc("is_admin");
+
+      if (authorizationError) {
+        console.error("Admin login authorization error:", authorizationError);
+        await supabase.auth.signOut({ scope: "local" });
+        setError(
+          "Admin yetkisi doğrulanamadı. Lütfen sistem yöneticisiyle iletişime geçin."
+        );
+        return;
+      }
+
+      if (isAdmin !== true) {
+        await supabase.auth.signOut({ scope: "local" });
+        setError("Bu hesabın yönetim paneline erişim yetkisi yok.");
+        return;
+      }
+
       router.push("/admin");
       router.refresh();
     } catch {
@@ -99,6 +117,7 @@ export default function AdminLoginPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="username"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -120,6 +139,7 @@ export default function AdminLoginPage() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

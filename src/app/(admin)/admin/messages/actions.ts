@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export interface MessageActionState {
   message: string;
@@ -10,12 +10,7 @@ export interface MessageActionState {
 const initialError = (message: string): MessageActionState => ({ message });
 
 async function getAuthenticatedClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { supabase, user };
+  return getAdminClient();
 }
 
 function revalidateMessagePages() {

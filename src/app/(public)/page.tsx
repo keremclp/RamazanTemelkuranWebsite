@@ -63,45 +63,6 @@ function resolveHeroSlide(
   return { ...slide, cta_href: ctaHref };
 }
 
-/* ---------- Fallback placeholder data ---------- */
-
-const fallbackSlides: HomeHeroSlide[] = [
-  {
-    id: "fallback-1",
-    image_url: "",
-    title: "Ramazan\nTemelkuran",
-    subtitle:
-      "Kelimelerin gücüne inanan, hikayelerin dünyayı değiştirebileceğini bilen bir yazar. Edebiyatın büyülü dünyasına hoş geldiniz.",
-    cta_text: "Kitapları Keşfet",
-    cta_link: "/books",
-    cta_type: "books",
-    cta_book_id: null,
-    cta_external_url: null,
-    display_order: 1,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-];
-
-const fallbackBooks: Partial<Book>[] = [
-  { id: "fb-1", title: "Kitap Başlığı 1", slug: "kitap-1", description: "Bu kitabın kısa açıklaması burada yer alacak.", cover_image_url: null, display_order: 1 },
-  { id: "fb-2", title: "Kitap Başlığı 2", slug: "kitap-2", description: "Bu kitabın kısa açıklaması burada yer alacak.", cover_image_url: null, display_order: 2 },
-  { id: "fb-3", title: "Kitap Başlığı 3", slug: "kitap-3", description: "Bu kitabın kısa açıklaması burada yer alacak.", cover_image_url: null, display_order: 3 },
-];
-
-const fallbackEvents: Partial<HomeEvent>[] = [
-  { id: "fe-1", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "İstanbul" },
-  { id: "fe-2", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "Ankara" },
-  { id: "fe-3", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "İzmir" },
-  { id: "fe-4", title: "Etkinlik Adı", event_date: new Date().toISOString(), location: "Bursa" },
-];
-
-const fallbackAbout: Partial<AboutContent> = {
-  biography:
-    "Ramazan Temelkuran, edebiyat dünyasında önemli bir yere sahip olan yazar, eserleriyle okuyucularını derinden etkileyen ve düşünmeye sevk eden bir kalem. Yılların birikimiyle oluşturduğu eserlerinde toplumsal meseleleri bireysel hikayelerle harmanlıyor.",
-  portrait_image_url: null,
-};
-
 /* ---------- Data fetching ---------- */
 
 async function getHomePageData() {
@@ -134,26 +95,23 @@ async function getHomePageData() {
       getSiteSettings(),
     ]);
 
-    const slideRows =
-      (slidesRes.data as HomeHeroSlide[] | null) ?? fallbackSlides;
+    const slideRows = (slidesRes.data as HomeHeroSlide[] | null) ?? [];
 
     return {
       heroSlides: slideRows.map((slide) => resolveHeroSlide(slide, settings)),
-      featuredBooks: (booksRes.data as Book[] | null) ?? (fallbackBooks as Book[]),
-      recentEvents: (eventsRes.data as HomeEvent[] | null) ?? (fallbackEvents as HomeEvent[]),
-      about: (aboutRes.data as AboutContent | null) ?? (fallbackAbout as AboutContent),
+      featuredBooks: (booksRes.data as Book[] | null) ?? [],
+      recentEvents: (eventsRes.data as HomeEvent[] | null) ?? [],
+      about: (aboutRes.data as AboutContent | null) ?? null,
       settings,
     };
   } catch {
-    // DB not set up yet — return placeholders
+    // If Supabase is unavailable, keep the preview clean and avoid demo data.
     const settings = await getSiteSettings();
     return {
-      heroSlides: fallbackSlides.map((slide) =>
-        resolveHeroSlide(slide, settings)
-      ),
-      featuredBooks: fallbackBooks as Book[],
-      recentEvents: fallbackEvents as HomeEvent[],
-      about: fallbackAbout as AboutContent,
+      heroSlides: [],
+      featuredBooks: [],
+      recentEvents: [],
+      about: null,
       settings,
     };
   }
@@ -170,7 +128,7 @@ export default async function HomePage() {
       {heroSlides.length > 0 ? (
         <HeroSlider slides={heroSlides} />
       ) : (
-        /* Static fallback if no slides at all */
+        /* Neutral fallback if no slides are configured yet */
         <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-primary">
           <div className="absolute inset-0 opacity-5">
             <div
@@ -185,37 +143,31 @@ export default async function HomePage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8 animate-fade-in-up">
                 <div className="space-y-4">
-                  <p className="text-accent font-medium tracking-widest uppercase text-sm">
-                    Yazar &bull; Düşünür &bull; Anlatıcı
-                  </p>
                   <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                    Ramazan
-                    <br />
-                    <span className="text-accent">Temelkuran</span>
+                    {settings.site_title}
                   </h1>
                   <p className="text-lg text-white/60 max-w-lg leading-relaxed">
-                    Kelimelerin gücüne inanan, hikayelerin dünyayı değiştirebileceğini
-                    bilen bir yazar. Edebiyatın büyülü dünyasına hoş geldiniz.
+                    {settings.meta_description}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   <Link
-                    href="/books"
+                    href="/contact"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline group"
                   >
-                    <BookOpen size={18} />
-                    Kitapları Keşfet
+                    <User size={18} />
+                    İletişime Geç
                     <ArrowRight
                       size={16}
                       className="group-hover:translate-x-1 transition-transform"
                     />
                   </Link>
                   <Link
-                    href="/about"
+                    href="/books"
                     className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-lg hover:bg-white/10 transition-all duration-200 no-underline"
                   >
-                    <User size={18} />
-                    Hakkında
+                    <BookOpen size={18} />
+                    Kitaplar
                   </Link>
                 </div>
               </div>
@@ -234,6 +186,7 @@ export default async function HomePage() {
       )}
 
       {/* ===== FEATURED BOOKS SECTION ===== */}
+      {featuredBooks.length > 0 && (
       <section className="section-padding bg-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -300,8 +253,10 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ===== LATEST EVENTS SECTION ===== */}
+      {recentEvents.length > 0 && (
       <section className="section-padding bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -369,8 +324,10 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ===== AUTHOR SPOTLIGHT ===== */}
+      {about && (about.biography || about.portrait_image_url) && (
       <section className="section-padding bg-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -404,9 +361,7 @@ export default async function HomePage() {
                 </h2>
               </div>
               <p className="text-muted leading-relaxed">
-                {about.biography
-                  ? truncate(about.biography, 200)
-                  : "Ramazan Temelkuran, edebiyat dünyasında önemli bir yere sahip olan yazar, eserleriyle okuyucularını derinden etkileyen ve düşünmeye sevk eden bir kalem."}
+                {about.biography ? truncate(about.biography, 200) : ""}
               </p>
               <Link
                 href="/about"
@@ -422,8 +377,10 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ===== CTA BANNER ===== */}
+      {settings.shopier_main_url && (
       <section className="relative py-20 bg-primary overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div
@@ -441,19 +398,18 @@ export default async function HomePage() {
             Tüm kitaplarıma Shopier üzerinden kolayca ulaşabilir ve sipariş
             verebilirsiniz.
           </p>
-          {settings.shopier_main_url && (
-            <Link
-              href={settings.shopier_main_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline text-lg"
-            >
-              <BookOpen size={20} />
-              Shopier&apos;den Satın Al
-            </Link>
-          )}
+          <Link
+            href={settings.shopier_main_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline text-lg"
+          >
+            <BookOpen size={20} />
+            Shopier&apos;den Satın Al
+          </Link>
         </div>
       </section>
+      )}
     </>
   );
 }

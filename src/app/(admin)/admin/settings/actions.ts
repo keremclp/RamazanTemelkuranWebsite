@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import type { SocialLinks } from "@/lib/types/database";
 
 export interface SiteSettingsFormState {
@@ -13,6 +13,8 @@ interface SiteSettingsPayload {
   site_title: string;
   shopier_main_url: string;
   meta_description: string;
+  contact_email: string;
+  contact_location: string;
   social_links: SocialLinks;
 }
 
@@ -46,25 +48,31 @@ function isValidUrl(value: string) {
   }
 }
 
-async function getAuthenticatedClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+function isValidEmail(value: string) {
+  if (!value) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
 
-  return { supabase, user };
+async function getAuthenticatedClient() {
+  return getAdminClient();
 }
 
 function parseSiteSettingsForm(formData: FormData): ParsedSiteSettingsForm {
   const siteTitle = getString(formData, "site_title");
   const metaDescription = getString(formData, "meta_description");
   const shopierMainUrl = getString(formData, "shopier_main_url");
+  const contactEmail = getString(formData, "contact_email");
+  const contactLocation = getString(formData, "contact_location");
 
   if (!siteTitle) return { error: "Site başlığı gereklidir." };
   if (!metaDescription) return { error: "Meta açıklaması gereklidir." };
 
   if (shopierMainUrl && !isValidUrl(shopierMainUrl)) {
     return { error: "Shopier bağlantısı geçerli bir URL olmalıdır." };
+  }
+
+  if (contactEmail && !isValidEmail(contactEmail)) {
+    return { error: "İletişim e-postası geçerli bir e-posta olmalıdır." };
   }
 
   const socialLinks: SocialLinks = {};
@@ -81,6 +89,8 @@ function parseSiteSettingsForm(formData: FormData): ParsedSiteSettingsForm {
       site_title: siteTitle,
       shopier_main_url: shopierMainUrl,
       meta_description: metaDescription,
+      contact_email: contactEmail,
+      contact_location: contactLocation,
       social_links: socialLinks,
     },
   };

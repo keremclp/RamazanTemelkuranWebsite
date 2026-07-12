@@ -21,6 +21,7 @@
 
 ## Phase 3 — Admin Panel
 - [x] Admin login page with Supabase Auth
+- [x] Separate login layout and database-backed admin allowlist
 - [x] Admin layout (sidebar navigation, header)
 - [x] Dashboard with stats
 - [x] Books CRUD

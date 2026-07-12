@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
 import { slugify } from "@/lib/utils/helpers";
 
@@ -43,12 +44,7 @@ function getOptionalNumber(formData: FormData, key: string) {
 }
 
 async function getAuthenticatedClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { supabase, user };
+  return getAdminClient();
 }
 
 function parseBookForm(formData: FormData): ParsedBookForm {

@@ -16,6 +16,7 @@ A stylish, warm & elegant promotional website for a book author, built with Next
 | Video Handling | YouTube/Vimeo embeds (paste URL in admin) |
 | Admin Panel | Protected `/admin/*` routes within the same app |
 | Admin Auth | Supabase Auth (single admin, email/password) |
+| Admin Authorization | Database allowlist (`admin_users`) enforced by RLS |
 | Book Detail View | Separate pages (`/books/[slug]`) |
 | Book Reviews | Not implemented for now (future feature) |
 | Contact Form | Stored in Supabase `contact_messages` table + email notification |
@@ -193,6 +194,10 @@ app/
 - meta_description (text)
 - social_links (jsonb)
 - updated_at (timestamp)
+
+### admin_users
+- user_id (uuid, PK, FK → auth.users)
+- created_at (timestamp)
 
 ---
 

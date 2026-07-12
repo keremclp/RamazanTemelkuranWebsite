@@ -31,8 +31,8 @@ export default function Navbar({
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled || isOpen
-          ? "bg-surface/95 backdrop-blur-md shadow-[var(--shadow-nav)]"
-          : "bg-transparent"
+          ? "bg-surface/95 shadow-[var(--shadow-nav)]"
+          : "bg-surface/95 border-b border-border/60"
       }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,7 +43,9 @@ export default function Navbar({
             onClick={() => setIsOpen(false)}
             className="group flex items-center gap-2 no-underline"
           >
-            <span className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold text-primary tracking-wide group-hover:text-accent transition-colors duration-[var(--transition-base)]">
+            <span
+              className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold tracking-wide text-primary transition-colors duration-[var(--transition-base)] group-hover:text-accent"
+            >
               {siteTitle}
             </span>
           </Link>
@@ -87,7 +89,7 @@ export default function Navbar({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-primary hover:text-accent transition-colors"
+            className="md:hidden p-2 text-primary transition-colors hover:text-accent"
             aria-label={isOpen ? "Menüyü kapat" : "Menüyü aç"}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}

@@ -4,9 +4,11 @@ import type { SiteSettings } from "@/lib/types/database";
 export const fallbackSiteSettings: SiteSettings = {
   id: "fallback",
   site_title: "Ramazan Temelkuran",
-  shopier_main_url: "https://shopier.com",
+  shopier_main_url: "",
   meta_description:
     "Yazar Ramazan Temelkuran'ın resmi web sitesi. Kitaplar, etkinlikler ve daha fazlası.",
+  contact_email: "",
+  contact_location: "",
   social_links: {},
   updated_at: new Date(0).toISOString(),
 };

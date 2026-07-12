@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
 import type { Milestone, SocialLinks } from "@/lib/types/database";
 
@@ -49,12 +49,7 @@ function isValidSocialUrl(value: string) {
 }
 
 async function getAuthenticatedClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { supabase, user };
+  return getAdminClient();
 }
 
 function parseMilestones(value: string): (Milestone | "invalid")[] | null {

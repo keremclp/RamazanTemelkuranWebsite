@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { Mail, MapPin } from "lucide-react";
 import ContactForm from "@/components/public/ContactForm";
+import { getSiteSettings } from "@/lib/site-settings";
+import type { SocialLinks } from "@/lib/types/database";
 
 export const metadata: Metadata = {
   title: "İletişim",
   description: "Ramazan Temelkuran ile iletişime geçin.",
 };
 
-/* ---- Social media inline SVG icons ---- */
 function InstagramIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -24,94 +25,116 @@ function YouTubeIcon({ className }: { className?: string }) {
   );
 }
 
-export default function ContactPage() {
+const socialPlatforms: {
+  key: keyof SocialLinks;
+  label: string;
+  icon: typeof InstagramIcon;
+}[] = [
+  { key: "instagram", label: "Instagram", icon: InstagramIcon },
+  { key: "youtube", label: "YouTube", icon: YouTubeIcon },
+];
+
+function isDisplayableUrl(value: string | undefined) {
+  return Boolean(value && value !== "#");
+}
+
+export default async function ContactPage() {
+  const settings = await getSiteSettings();
+  const contactEmail = settings.contact_email?.trim() ?? "";
+  const contactLocation = settings.contact_location?.trim() ?? "";
+  const socialEntries = socialPlatforms.flatMap((platform) => {
+    const href = settings.social_links?.[platform.key];
+    return isDisplayableUrl(href) ? [{ ...platform, href: href as string }] : [];
+  });
+  const hasContactDetails = Boolean(contactEmail || contactLocation);
+
   return (
     <section className="section-padding">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-heading)] text-primary mb-4">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-16 text-center animate-fade-in-up">
+          <h1 className="mb-4 text-4xl font-bold text-primary font-[family-name:var(--font-heading)] md:text-5xl">
             İletişim
           </h1>
-          <div className="w-16 h-1 bg-accent mx-auto mb-4"></div>
-          <p className="text-muted text-lg max-w-2xl mx-auto">
+          <div className="mx-auto mb-4 h-1 w-16 bg-accent" />
+          <p className="mx-auto max-w-2xl text-lg text-muted">
             Sorularınız, önerileriniz veya iş birliği talepleriniz için bizimle iletişime geçin.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-fade-in-up">
-          {/* Contact Form */}
+        <div className="grid grid-cols-1 gap-12 animate-fade-in-up lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <div className="bg-surface rounded-[var(--radius-xl)] p-8 shadow-[var(--shadow-card)]">
-              <h2 className="text-xl font-bold font-[family-name:var(--font-heading)] text-primary mb-6">
+            <div className="rounded-[var(--radius-xl)] bg-surface p-8 shadow-[var(--shadow-card)]">
+              <h2 className="mb-6 text-xl font-bold text-primary font-[family-name:var(--font-heading)]">
                 Mesaj Gönderin
               </h2>
               <ContactForm />
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Contact Info Card */}
-            <div className="bg-surface rounded-[var(--radius-xl)] p-8 shadow-[var(--shadow-card)]">
-              <h3 className="text-lg font-bold font-[family-name:var(--font-heading)] text-primary mb-6">
-                İletişim Bilgileri
-              </h3>
+            {hasContactDetails && (
+              <div className="rounded-[var(--radius-xl)] bg-surface p-8 shadow-[var(--shadow-card)]">
+                <h3 className="mb-6 text-lg font-bold text-primary font-[family-name:var(--font-heading)]">
+                  İletişim Bilgileri
+                </h3>
 
-              <div className="space-y-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                    <Mail className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-primary">E-posta</p>
+                <div className="space-y-5">
+                  {contactEmail && (
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
+                        <Mail className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-primary">E-posta</p>
+                        <a
+                          href={`mailto:${contactEmail}`}
+                          className="text-sm text-muted transition-colors hover:text-accent"
+                        >
+                          {contactEmail}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {contactLocation && (
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
+                        <MapPin className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-primary">Konum</p>
+                        <p className="text-sm text-muted">{contactLocation}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {socialEntries.length > 0 && (
+              <div className="rounded-[var(--radius-xl)] bg-surface p-8 shadow-[var(--shadow-card)]">
+                <h3 className="mb-6 text-lg font-bold text-primary font-[family-name:var(--font-heading)]">
+                  Sosyal Medya
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {socialEntries.map(({ icon: Icon, label, href }) => (
                     <a
-                      href="mailto:info@ramazantemelkuran.com"
-                      className="text-sm text-muted hover:text-accent transition-colors"
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2.5 rounded-[var(--radius-md)] border border-border px-4 py-3 transition-all duration-[var(--transition-base)] hover:border-accent hover:bg-accent/5"
                     >
-                      info@ramazantemelkuran.com
+                      <Icon className="h-4 w-4 text-muted transition-colors group-hover:text-accent" />
+                      <span className="text-xs font-medium text-primary transition-colors group-hover:text-accent">
+                        {label}
+                      </span>
                     </a>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-primary">Konum</p>
-                    <p className="text-sm text-muted">Şırnak, Türkiye</p>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
-
-            {/* Social Media Card */}
-            <div className="bg-surface rounded-[var(--radius-xl)] p-8 shadow-[var(--shadow-card)]">
-              <h3 className="text-lg font-bold font-[family-name:var(--font-heading)] text-primary mb-6">
-                Sosyal Medya
-              </h3>
-
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { icon: InstagramIcon, label: "Instagram", href: "#" },
-                  { icon: YouTubeIcon, label: "YouTube", href: "#" },
-                ].map(({ icon: Icon, label, href }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-2.5 px-4 py-3 rounded-[var(--radius-md)] border border-border hover:border-accent hover:bg-accent/5 transition-all duration-[var(--transition-base)]"
-                  >
-                    <Icon className="w-4 h-4 text-muted group-hover:text-accent transition-colors" />
-                    <span className="text-xs font-medium text-primary group-hover:text-accent transition-colors">
-                      {label}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

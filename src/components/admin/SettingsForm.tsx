@@ -76,6 +76,29 @@ export default function SettingsForm({
             />
           </Field>
 
+          <Field label="İletişim e-postası" htmlFor="contact_email">
+            <input
+              id="contact_email"
+              name="contact_email"
+              type="email"
+              defaultValue={settings.contact_email}
+              className={inputClassName}
+              placeholder="info@example.com"
+              disabled={pending}
+            />
+          </Field>
+
+          <Field label="İletişim konumu" htmlFor="contact_location">
+            <input
+              id="contact_location"
+              name="contact_location"
+              defaultValue={settings.contact_location}
+              className={inputClassName}
+              placeholder="Şehir, Ülke"
+              disabled={pending}
+            />
+          </Field>
+
           <div className="sm:col-span-2">
             <Field label="Meta açıklaması" htmlFor="meta_description" required>
               <textarea

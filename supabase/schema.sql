@@ -109,8 +109,18 @@ CREATE TABLE site_settings (
   site_title TEXT NOT NULL DEFAULT 'Ramazan Temelkuran',
   shopier_main_url TEXT NOT NULL DEFAULT '',
   meta_description TEXT NOT NULL DEFAULT '',
+  contact_email TEXT NOT NULL DEFAULT '',
+  contact_location TEXT NOT NULL DEFAULT '',
   social_links JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- 8. ADMIN ALLOWLIST
+-- ============================================
+CREATE TABLE admin_users (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================
@@ -148,6 +158,23 @@ CREATE TRIGGER site_settings_updated_at
   BEFORE UPDATE ON site_settings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.admin_users
+    WHERE user_id = auth.uid()
+  );
+$$;
+
+REVOKE ALL ON FUNCTION is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
+
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================
@@ -160,6 +187,7 @@ ALTER TABLE hero_slides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE about_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
 -- PUBLIC READ policies (anyone can read public content)
 CREATE POLICY "Public can read books" ON books
@@ -184,27 +212,38 @@ CREATE POLICY "Public can read site settings" ON site_settings
 CREATE POLICY "Anyone can submit contact messages" ON contact_messages
   FOR INSERT WITH CHECK (true);
 
--- ADMIN (authenticated) policies — full CRUD
+-- ADMIN allowlist — only rows in admin_users receive full CRUD access.
+CREATE POLICY "Users can read own admin membership" ON admin_users
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
+
 CREATE POLICY "Admin can manage books" ON books
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 CREATE POLICY "Admin can manage events" ON events
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 CREATE POLICY "Admin can manage media" ON media
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 CREATE POLICY "Admin can manage hero slides" ON hero_slides
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 CREATE POLICY "Admin can manage about content" ON about_content
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 CREATE POLICY "Admin can manage contact messages" ON contact_messages
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 CREATE POLICY "Admin can manage site settings" ON site_settings
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ============================================
 -- SUPABASE STORAGE
@@ -217,111 +256,46 @@ CREATE POLICY "Public can read media bucket files" ON storage.objects
   FOR SELECT TO public
   USING (bucket_id = 'media');
 
-CREATE POLICY "Authenticated users can upload media files" ON storage.objects
+CREATE POLICY "Admins can upload media files" ON storage.objects
   FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'media');
+  WITH CHECK (bucket_id = 'media' AND public.is_admin());
 
-CREATE POLICY "Authenticated users can update media files" ON storage.objects
+CREATE POLICY "Admins can update media files" ON storage.objects
   FOR UPDATE TO authenticated
-  USING (bucket_id = 'media')
-  WITH CHECK (bucket_id = 'media');
+  USING (bucket_id = 'media' AND public.is_admin())
+  WITH CHECK (bucket_id = 'media' AND public.is_admin());
 
-CREATE POLICY "Authenticated users can delete media files" ON storage.objects
+CREATE POLICY "Admins can delete media files" ON storage.objects
   FOR DELETE TO authenticated
-  USING (bucket_id = 'media');
+  USING (bucket_id = 'media' AND public.is_admin());
+
+-- After creating the Supabase Auth administrator, grant access once:
+-- INSERT INTO public.admin_users (user_id)
+-- SELECT id FROM auth.users WHERE email = 'your-admin@example.com'
+-- ON CONFLICT (user_id) DO NOTHING;
 
 -- ============================================
--- SEED DATA (placeholder content)
+-- SEED DATA (safe empty defaults)
 -- ============================================
 
--- Insert default about content
+-- Insert an empty about row for the admin editor.
 INSERT INTO about_content (biography, milestones, social_links)
-VALUES (
-  'Ramazan Temelkuran, edebiyat dünyasında önemli bir yere sahip olan yazar, eserleriyle okuyucularını derinden etkileyen ve düşünmeye sevk eden bir kalem. Yılların birikimiyle oluşturduğu eserlerinde toplumsal meseleleri bireysel hikayelerle harmanlıyor.
-
-Birçok ödüle layık görülen yazar, ulusal ve uluslararası etkinliklerde okuyucularıyla buluşmaya devam ediyor. Edebiyatın toplumu dönüştürme gücüne inanan Temelkuran, yazarlık serüvenine tüm tutkusuyla devam etmektedir.',
-  '[
-    {"year": "2010", "title": "İlk Kitap", "description": "İlk romanı yayımlandı ve edebiyat çevrelerinde büyük ilgi gördü."},
-    {"year": "2015", "title": "Edebiyat Ödülü", "description": "Yılın en iyi romanı dalında prestijli bir ödüle layık görüldü."},
-    {"year": "2020", "title": "Uluslararası Tanınırlık", "description": "Eserleri farklı dillere çevrilmeye başlandı."},
-    {"year": "2024", "title": "Yeni Eserler", "description": "Yeni kitaplarıyla okuyucularıyla buluşmaya devam ediyor."}
-  ]'::jsonb,
-  '{"instagram": "#", "youtube": "#"}'::jsonb
-);
+VALUES ('', '[]'::jsonb, '{}'::jsonb);
 
 -- Insert default site settings
-INSERT INTO site_settings (site_title, shopier_main_url, meta_description, social_links)
+INSERT INTO site_settings (
+  site_title,
+  shopier_main_url,
+  meta_description,
+  contact_email,
+  contact_location,
+  social_links
+)
 VALUES (
   'Ramazan Temelkuran',
-  'https://shopier.com',
+  '',
   'Yazar Ramazan Temelkuran''ın resmi web sitesi. Kitaplar, etkinlikler ve daha fazlası.',
-  '{"instagram": "#", "youtube": "#"}'::jsonb
+  '',
+  '',
+  '{}'::jsonb
 );
-
--- Insert sample books
-INSERT INTO books (title, slug, description, shopier_url, publisher, publication_year, page_count, display_order)
-VALUES
-  (
-    'Sessiz Fırtına',
-    'sessiz-firtina',
-    'Bir kasabanın sakin görünümü altında yatan derin çatışmaları ve insanların iç dünyalarını anlatan etkileyici bir roman. Toplumsal baskılar altında ezilen bireylerin sessiz direnişini konu alıyor.',
-    'https://shopier.com',
-    'Örnek Yayınevi',
-    2023,
-    320,
-    1
-  ),
-  (
-    'Zamanın Kıyısında',
-    'zamanin-kiyisinda',
-    'Geçmiş ve gelecek arasında sıkışmış bir adamın, kendini ve hayatın anlamını arayışını anlatan felsefi bir roman. Zaman kavramını sorgulayan derin bir eser.',
-    'https://shopier.com',
-    'Örnek Yayınevi',
-    2022,
-    280,
-    2
-  ),
-  (
-    'Düşüncenin İzleri',
-    'dusuncenin-izleri',
-    'Toplumsal değişimleri, kültürel dönüşümleri ve bireyin bu süreçteki yerini ele alan düşündürücü denemeler. Modern hayatın karmaşıklığına farklı bir perspektiften bakış.',
-    'https://shopier.com',
-    'Örnek Yayınevi',
-    2021,
-    240,
-    3
-  );
-
--- Insert sample events
-INSERT INTO events (title, description, event_date, location)
-VALUES
-  ('Kitap Fuarı İmza Günü', 'İstanbul Kitap Fuarı''nda okuyucularla buluşma ve imza etkinliği.', '2024-11-15', 'İstanbul'),
-  ('Edebiyat Söyleşisi', 'Çağdaş Türk edebiyatı üzerine bir söyleşi ve okuma etkinliği.', '2024-09-20', 'Ankara'),
-  ('Yeni Kitap Lansman', 'Sessiz Fırtına romanının lansman etkinliği.', '2024-06-10', 'İzmir');
-
--- Insert sample hero slides
-INSERT INTO hero_slides (
-  image_url,
-  title,
-  subtitle,
-  cta_text,
-  cta_link,
-  cta_type,
-  cta_book_id,
-  display_order,
-  is_active
-)
-VALUES
-  (
-    '/images/hero-placeholder.jpg',
-    'Yeni Kitap: Sessiz Fırtına',
-    'Şimdi tüm kitapçılarda ve Shopier''de',
-    'Kitabı İncele',
-    NULL,
-    'book',
-    (SELECT id FROM books WHERE slug = 'sessiz-firtina' LIMIT 1),
-    1,
-    true
-  ),
-  ('/images/hero-placeholder.jpg', 'Edebiyatın Büyülü Dünyası', 'Kelimelerin gücüne inanıyoruz', 'Kitapları Keşfet', NULL, 'books', NULL, 2, true),
-  ('/images/hero-placeholder.jpg', 'Etkinliklerimiz', 'İmza günleri ve söyleşilerden kareler', 'Galeriyi Gör', NULL, 'gallery', NULL, 3, true);

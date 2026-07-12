@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
   title: {
@@ -9,11 +11,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = await getAdminClient();
+
+  if (!user) {
+    redirect("/admin/login");
+  }
+
   return (
     <div className="min-h-screen bg-secondary">
       <AdminSidebar />

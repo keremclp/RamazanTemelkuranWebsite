@@ -34,8 +34,9 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
   const currentYear = new Date().getFullYear();
   const socialEntries = socialPlatforms.flatMap((platform) => {
     const url = settings.social_links[platform];
-    return url ? [{ platform, url }] : [];
+    return url && url !== "#" ? [{ platform, url }] : [];
   });
+  const contactEmail = settings.contact_email?.trim() ?? "";
 
   return (
     <footer className="bg-primary text-white/80">
@@ -106,18 +107,20 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
               </div>
             )}
 
+            {contactEmail && (
             <div className="space-y-2">
               <h4 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-white">
                 İletişim
               </h4>
               <a
-                href="mailto:info@ramazantemelkuran.com"
+                href={`mailto:${contactEmail}`}
                 className="flex items-center gap-2 text-sm text-white/60 hover:text-accent transition-colors no-underline"
               >
                 <Mail size={14} />
-                info@ramazantemelkuran.com
+                {contactEmail}
               </a>
             </div>
+            )}
           </div>
         </div>
       </div>
