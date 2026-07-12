@@ -65,7 +65,12 @@ CREATE TABLE hero_slides (
   title TEXT,
   subtitle TEXT,
   cta_text TEXT,
+  -- Deprecated after CTA target migration; retained for backwards compatibility.
   cta_link TEXT,
+  cta_type TEXT NOT NULL DEFAULT 'none'
+    CHECK (cta_type IN ('none', 'books', 'book', 'gallery', 'about', 'contact', 'shopier', 'external')),
+  cta_book_id UUID REFERENCES books(id) ON DELETE SET NULL,
+  cta_external_url TEXT,
   display_order INTEGER NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -117,6 +122,7 @@ CREATE INDEX idx_media_event_id ON media(event_id);
 CREATE INDEX idx_media_type ON media(type);
 CREATE INDEX idx_events_date ON events(event_date DESC);
 CREATE INDEX idx_hero_slides_active ON hero_slides(is_active, display_order);
+CREATE INDEX idx_hero_slides_cta_book ON hero_slides(cta_book_id);
 CREATE INDEX idx_contact_messages_read ON contact_messages(is_read, created_at DESC);
 
 -- ============================================
@@ -294,8 +300,28 @@ VALUES
   ('Yeni Kitap Lansman', 'Sessiz Fırtına romanının lansman etkinliği.', '2024-06-10', 'İzmir');
 
 -- Insert sample hero slides
-INSERT INTO hero_slides (image_url, title, subtitle, cta_text, cta_link, display_order, is_active)
+INSERT INTO hero_slides (
+  image_url,
+  title,
+  subtitle,
+  cta_text,
+  cta_link,
+  cta_type,
+  cta_book_id,
+  display_order,
+  is_active
+)
 VALUES
-  ('/images/hero-placeholder.jpg', 'Yeni Kitap: Sessiz Fırtına', 'Şimdi tüm kitapçılarda ve Shopier''de', 'Kitabı İncele', '/books/sessiz-firtina', 1, true),
-  ('/images/hero-placeholder.jpg', 'Edebiyatın Büyülü Dünyası', 'Kelimelerin gücüne inanıyoruz', 'Kitapları Keşfet', '/books', 2, true),
-  ('/images/hero-placeholder.jpg', 'Etkinliklerimiz', 'İmza günleri ve söyleşilerden kareler', 'Galeriyi Gör', '/gallery', 3, true);
+  (
+    '/images/hero-placeholder.jpg',
+    'Yeni Kitap: Sessiz Fırtına',
+    'Şimdi tüm kitapçılarda ve Shopier''de',
+    'Kitabı İncele',
+    NULL,
+    'book',
+    (SELECT id FROM books WHERE slug = 'sessiz-firtina' LIMIT 1),
+    1,
+    true
+  ),
+  ('/images/hero-placeholder.jpg', 'Edebiyatın Büyülü Dünyası', 'Kelimelerin gücüne inanıyoruz', 'Kitapları Keşfet', NULL, 'books', NULL, 2, true),
+  ('/images/hero-placeholder.jpg', 'Etkinliklerimiz', 'İmza günleri ve söyleşilerden kareler', 'Galeriyi Gör', NULL, 'gallery', NULL, 3, true);

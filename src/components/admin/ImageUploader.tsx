@@ -21,8 +21,10 @@ interface ImageUploaderProps {
   frameClassName?: string;
   imageSizes?: string;
   previewAlt?: string;
+  showRemoveButton?: boolean;
   showReplaceButton?: boolean;
   replaceLabel?: string;
+  removeButtonClassName?: string;
 }
 
 export default function ImageUploader({
@@ -38,7 +40,9 @@ export default function ImageUploader({
   frameClassName,
   imageSizes = "(max-width: 640px) 100vw, 400px",
   previewAlt = "Yüklenen görsel",
+  showRemoveButton = true,
   showReplaceButton = false,
+  removeButtonClassName = "absolute top-2 right-2 z-10 p-1.5 bg-primary/80 text-white rounded-lg hover:bg-danger transition-colors",
   replaceLabel = "Değiştir",
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
@@ -176,21 +180,23 @@ export default function ImageUploader({
               className="object-cover"
               sizes={imageSizes}
             />
-            <button
-              type="button"
-              onClick={handleRemove}
-              disabled={removing}
-              className="absolute top-2 right-2 p-1.5 bg-primary/80 text-white rounded-lg hover:bg-danger transition-colors"
-              aria-label="Görseli kaldır"
-            >
-              {removing ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <X size={16} />
-              )}
-            </button>
+            {showRemoveButton && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={removing}
+                className={removeButtonClassName}
+                aria-label="Görseli kaldır"
+              >
+                {removing ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <X size={16} />
+                )}
+              </button>
+            )}
             {showReplaceButton && (
-              <label className="absolute bottom-2 left-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary/80 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-accent">
+              <label className="absolute bottom-2 left-2 z-10 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary/80 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-accent">
                 {uploading ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (

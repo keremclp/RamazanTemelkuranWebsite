@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { HeroSlide } from "@/lib/types/database";
+import type { ResolvedHeroSlide } from "@/lib/types/database";
 
 interface HeroSliderProps {
-  slides: HeroSlide[];
+  slides: ResolvedHeroSlide[];
 }
 
 export default function HeroSlider({ slides }: HeroSliderProps) {
@@ -99,10 +99,22 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
                   {slide.subtitle}
                 </p>
               )}
-              {slide.cta_text && slide.cta_link && (
+              {slide.cta_text && slide.cta_href && (
                 <div>
                   <Link
-                    href={slide.cta_link}
+                    href={slide.cta_href}
+                    target={
+                      slide.cta_type === "shopier" ||
+                      slide.cta_type === "external"
+                        ? "_blank"
+                        : undefined
+                    }
+                    rel={
+                      slide.cta_type === "shopier" ||
+                      slide.cta_type === "external"
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
                     className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline group"
                   >
                     {slide.cta_text}

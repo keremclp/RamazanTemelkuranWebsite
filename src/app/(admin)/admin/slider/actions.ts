@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
+import {
+  HERO_SLIDE_CTA_DEFAULT_TEXT,
+  isHeroSlideCtaType,
+} from "@/lib/hero-slide-cta";
+import type { HeroSlideCtaType } from "@/lib/types/database";
 
 export interface HeroSlideFormState {
   message: string;
@@ -16,6 +21,9 @@ interface HeroSlidePayload {
   subtitle: string | null;
   cta_text: string | null;
   cta_link: string | null;
+  cta_type: HeroSlideCtaType;
+  cta_book_id: string | null;
+  cta_external_url: string | null;
   display_order: number;
   is_active: boolean;
 }
@@ -39,12 +47,10 @@ function getOptionalNumber(formData: FormData, key: string) {
   return Number.isInteger(number) ? number : Number.NaN;
 }
 
-function isValidLink(value: string) {
-  if (value.startsWith("/")) return true;
-
+function isValidExternalUrl(value: string) {
   try {
-    new URL(value);
-    return true;
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
@@ -63,20 +69,32 @@ function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
   const imageUrl = getString(formData, "image_url");
   const title = getString(formData, "title");
   const subtitle = getString(formData, "subtitle");
-  const ctaText = getString(formData, "cta_text");
-  const ctaLink = getString(formData, "cta_link");
+  const rawCtaType = getString(formData, "cta_type");
+  const ctaBookId = getString(formData, "cta_book_id");
+  const ctaExternalUrl = getString(formData, "cta_external_url");
   const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
+
+  if (!isHeroSlideCtaType(rawCtaType)) {
+    return { error: "Geçerli bir buton hedefi seçin." };
+  }
+
+  const ctaType = rawCtaType;
+  const customCtaText = getString(formData, "cta_text");
+  const ctaText =
+    ctaType === "none"
+      ? null
+      : customCtaText || HERO_SLIDE_CTA_DEFAULT_TEXT[ctaType];
 
   if (Number.isNaN(displayOrder) || displayOrder < 0) {
     return { error: "Görüntülenme sırası sıfır veya daha büyük olmalıdır." };
   }
 
-  if ((ctaText && !ctaLink) || (!ctaText && ctaLink)) {
-    return { error: "Buton metni ve buton bağlantısı birlikte girilmelidir." };
+  if (ctaType === "book" && !ctaBookId) {
+    return { error: "Butonun açacağı kitabı seçin." };
   }
 
-  if (ctaLink && !isValidLink(ctaLink)) {
-    return { error: "Buton bağlantısı /sayfa veya geçerli bir URL olmalıdır." };
+  if (ctaType === "external" && !isValidExternalUrl(ctaExternalUrl)) {
+    return { error: "Geçerli bir harici web sitesi adresi girin." };
   }
 
   return {
@@ -84,8 +102,11 @@ function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
       image_url: imageUrl,
       title: title || null,
       subtitle: subtitle || null,
-      cta_text: ctaText || null,
-      cta_link: ctaLink || null,
+      cta_text: ctaText,
+      cta_link: null,
+      cta_type: ctaType,
+      cta_book_id: ctaType === "book" ? ctaBookId : null,
+      cta_external_url: ctaType === "external" ? ctaExternalUrl : null,
       display_order: displayOrder,
       is_active: getString(formData, "is_active") === "on",
     },
@@ -108,6 +129,16 @@ export async function createHeroSlideAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
 
+  if (parsed.data.cta_type === "book") {
+    const { data: book } = await supabase
+      .from("books")
+      .select("id")
+      .eq("id", parsed.data.cta_book_id)
+      .maybeSingle();
+
+    if (!book) return initialError("Seçilen kitap bulunamadı.");
+  }
+
   const { error } = await supabase.from("hero_slides").insert(parsed.data);
 
   if (error) {
@@ -129,6 +160,16 @@ export async function updateHeroSlideAction(
 
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
+
+  if (parsed.data.cta_type === "book") {
+    const { data: book } = await supabase
+      .from("books")
+      .select("id")
+      .eq("id", parsed.data.cta_book_id)
+      .maybeSingle();
+
+    if (!book) return initialError("Seçilen kitap bulunamadı.");
+  }
 
   const { data: existingSlide, error: fetchError } = await supabase
     .from("hero_slides")

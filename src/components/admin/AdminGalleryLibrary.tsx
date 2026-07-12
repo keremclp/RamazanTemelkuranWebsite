@@ -297,23 +297,6 @@ function GalleryMediaCard({
     media.type === "video" ? getYouTubeThumbnail(media.url) : photoUrl;
   const isHomepageMedia = media.event?.homepage_media_id === media.id;
 
-  async function handlePersistedPhotoRemoved() {
-    const confirmed = window.confirm(
-      "Bu fotoğraf medya kaydını ve Supabase dosyasını kalıcı olarak siler. Devam edilsin mi?"
-    );
-
-    if (!confirmed) return { message: "", cancelled: true };
-
-    const result = await deleteGalleryMediaAction(media.id);
-    if (result.message) {
-      setDeleteError(result.message);
-      return result;
-    }
-
-    router.refresh();
-    return result;
-  }
-
   function handleDelete() {
     const confirmed = window.confirm(
       "Bu medya kaydını silmek istediğinizden emin misiniz?"
@@ -344,11 +327,11 @@ function GalleryMediaCard({
             committedImageUrl={media.url}
             onImageUploaded={setPhotoUrl}
             onImageRemoved={() => setPhotoUrl("")}
-            onPersistedImageRemoved={handlePersistedPhotoRemoved}
             folder="events"
             frameClassName="relative aspect-video overflow-hidden bg-primary/5"
             imageSizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
             previewAlt={media.caption || media.event?.title || "Fotoğraf"}
+            showRemoveButton={false}
             showReplaceButton
             replaceLabel="Yeni fotoğraf"
           />

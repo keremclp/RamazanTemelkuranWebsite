@@ -27,6 +27,7 @@
 - [x] Events CRUD + media management
 - [x] Gallery management
 - [x] Hero slider management
+- [x] Automatic hero button destinations (page, book, Shopier, or external site)
 - [x] About page editor
 - [x] Contact messages viewer
 - [x] Site settings

@@ -4,6 +4,10 @@ import Link from "next/link";
 import { Edit3, ImageIcon, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { HeroSlide } from "@/lib/types/database";
+import {
+  HERO_SLIDE_CTA_LABELS,
+  inferLegacyCtaType,
+} from "@/lib/hero-slide-cta";
 import DeleteHeroSlideButton from "@/components/admin/DeleteHeroSlideButton";
 
 export const metadata: Metadata = {
@@ -15,6 +19,20 @@ const statusMessages: Record<string, string> = {
   updated: "Slayt başarıyla güncellendi.",
 };
 
+type AdminHeroSlide = HeroSlide & {
+  cta_book?: { title: string } | null;
+};
+
+function getCtaTargetLabel(slide: AdminHeroSlide) {
+  const type = slide.cta_type ?? inferLegacyCtaType(slide.cta_link);
+
+  if (type === "book" && slide.cta_book?.title) {
+    return `Kitap: ${slide.cta_book.title}`;
+  }
+
+  return HERO_SLIDE_CTA_LABELS[type];
+}
+
 export default async function AdminSliderPage({
   searchParams,
 }: {
@@ -24,11 +42,11 @@ export default async function AdminSliderPage({
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("hero_slides")
-    .select("*")
+    .select("*, cta_book:books!hero_slides_cta_book_id_fkey(title)")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 
-  const slides = (data as HeroSlide[] | null) ?? [];
+  const slides = (data as AdminHeroSlide[] | null) ?? [];
   const statusMessage = status ? statusMessages[status] : undefined;
 
   return (
@@ -133,9 +151,11 @@ export default async function AdminSliderPage({
                       {slide.subtitle}
                     </p>
                   )}
-                  {slide.cta_text && slide.cta_link && (
+                  {slide.cta_text &&
+                    (slide.cta_type ?? inferLegacyCtaType(slide.cta_link)) !==
+                      "none" && (
                     <p className="mt-2 text-xs text-muted">
-                      Buton: {slide.cta_text} · {slide.cta_link}
+                      Buton: {slide.cta_text} · {getCtaTargetLabel(slide)}
                     </p>
                   )}
                 </div>

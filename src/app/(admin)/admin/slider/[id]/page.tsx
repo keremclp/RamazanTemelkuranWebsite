@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getSiteSettings } from "@/lib/site-settings";
 import type { HeroSlide } from "@/lib/types/database";
 import HeroSlideForm from "@/components/admin/HeroSlideForm";
 import { deleteHeroSlideImageAction, updateHeroSlideAction } from "../actions";
@@ -18,11 +19,11 @@ export default async function EditHeroSlidePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("hero_slides")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [{ data }, { data: books }, settings] = await Promise.all([
+    supabase.from("hero_slides").select("*").eq("id", id).single(),
+    supabase.from("books").select("id, title").order("title"),
+    getSiteSettings(),
+  ]);
 
   if (!data) notFound();
 
@@ -52,6 +53,8 @@ export default async function EditHeroSlidePage({
         action={updateAction}
         deleteImageAction={deleteImageAction}
         slide={slide}
+        books={books ?? []}
+        hasShopierUrl={Boolean(settings.shopier_main_url)}
       />
     </div>
   );

@@ -2,7 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { BookOpen, ArrowRight, Camera, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import type { Book, Event, HeroSlide, AboutContent, Media } from "@/lib/types/database";
+import type {
+  AboutContent,
+  Book,
+  Event,
+  HeroSlide,
+  Media,
+  ResolvedHeroSlide,
+  SiteSettings,
+} from "@/lib/types/database";
 import { getSiteSettings } from "@/lib/site-settings";
 import { formatDate, truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
@@ -11,9 +19,53 @@ type HomeEvent = Event & {
   media?: Media[];
 };
 
+type HomeHeroSlide = HeroSlide & {
+  cta_book?: { slug: string } | null;
+};
+
+function resolveHeroSlide(
+  slide: HomeHeroSlide,
+  settings: SiteSettings
+): ResolvedHeroSlide {
+  let ctaHref: string | null = null;
+
+  switch (slide.cta_type) {
+    case "books":
+      ctaHref = "/books";
+      break;
+    case "book":
+      ctaHref = slide.cta_book?.slug
+        ? `/books/${slide.cta_book.slug}`
+        : null;
+      break;
+    case "gallery":
+      ctaHref = "/gallery";
+      break;
+    case "about":
+      ctaHref = "/about";
+      break;
+    case "contact":
+      ctaHref = "/contact";
+      break;
+    case "shopier":
+      ctaHref = settings.shopier_main_url || null;
+      break;
+    case "external":
+      ctaHref = slide.cta_external_url;
+      break;
+    case "none":
+      break;
+    default:
+      // Temporary compatibility for rows created before the CTA migration.
+      ctaHref = slide.cta_link;
+  }
+
+  return { ...slide, cta_href: ctaHref };
+}
+
 /* ---------- Fallback placeholder data ---------- */
 
-const fallbackSlides: HeroSlide[] = [
+const fallbackSlides: HomeHeroSlide[] = [
   {
     id: "fallback-1",
     image_url: "",
@@ -22,6 +74,9 @@ const fallbackSlides: HeroSlide[] = [
       "Kelimelerin gücüne inanan, hikayelerin dünyayı değiştirebileceğini bilen bir yazar. Edebiyatın büyülü dünyasına hoş geldiniz.",
     cta_text: "Kitapları Keşfet",
     cta_link: "/books",
+    cta_type: "books",
+    cta_book_id: null,
+    cta_external_url: null,
     display_order: 1,
     is_active: true,
     created_at: new Date().toISOString(),
@@ -56,7 +111,7 @@ async function getHomePageData() {
     const [slidesRes, booksRes, eventsRes, aboutRes, settings] = await Promise.all([
       supabase
         .from("hero_slides")
-        .select("*")
+        .select("*, cta_book:books!hero_slides_cta_book_id_fkey(slug)")
         .eq("is_active", true)
         .order("display_order"),
       supabase
@@ -79,8 +134,11 @@ async function getHomePageData() {
       getSiteSettings(),
     ]);
 
+    const slideRows =
+      (slidesRes.data as HomeHeroSlide[] | null) ?? fallbackSlides;
+
     return {
-      heroSlides: (slidesRes.data as HeroSlide[] | null) ?? fallbackSlides,
+      heroSlides: slideRows.map((slide) => resolveHeroSlide(slide, settings)),
       featuredBooks: (booksRes.data as Book[] | null) ?? (fallbackBooks as Book[]),
       recentEvents: (eventsRes.data as HomeEvent[] | null) ?? (fallbackEvents as HomeEvent[]),
       about: (aboutRes.data as AboutContent | null) ?? (fallbackAbout as AboutContent),
@@ -88,12 +146,15 @@ async function getHomePageData() {
     };
   } catch {
     // DB not set up yet — return placeholders
+    const settings = await getSiteSettings();
     return {
-      heroSlides: fallbackSlides,
+      heroSlides: fallbackSlides.map((slide) =>
+        resolveHeroSlide(slide, settings)
+      ),
       featuredBooks: fallbackBooks as Book[],
       recentEvents: fallbackEvents as HomeEvent[],
       about: fallbackAbout as AboutContent,
-      settings: await getSiteSettings(),
+      settings,
     };
   }
 }
