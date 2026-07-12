@@ -14,6 +14,7 @@ import type {
 import { getSiteSettings } from "@/lib/site-settings";
 import { formatDate, truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
+import { resolveHeroSlideCtaHref } from "@/lib/hero-slide-cta";
 
 type HomeEvent = Event & {
   media?: Media[];
@@ -27,40 +28,7 @@ function resolveHeroSlide(
   slide: HomeHeroSlide,
   settings: SiteSettings
 ): ResolvedHeroSlide {
-  let ctaHref: string | null = null;
-
-  switch (slide.cta_type) {
-    case "books":
-      ctaHref = "/books";
-      break;
-    case "book":
-      ctaHref = slide.cta_book?.slug
-        ? `/books/${slide.cta_book.slug}`
-        : null;
-      break;
-    case "gallery":
-      ctaHref = "/gallery";
-      break;
-    case "about":
-      ctaHref = "/about";
-      break;
-    case "contact":
-      ctaHref = "/contact";
-      break;
-    case "shopier":
-      ctaHref = settings.shopier_main_url || null;
-      break;
-    case "external":
-      ctaHref = slide.cta_external_url;
-      break;
-    case "none":
-      break;
-    default:
-      // Temporary compatibility for rows created before the CTA migration.
-      ctaHref = slide.cta_link;
-  }
-
-  return { ...slide, cta_href: ctaHref };
+  return { ...slide, cta_href: resolveHeroSlideCtaHref(slide, settings) };
 }
 
 /* ---------- Data fetching ---------- */
@@ -337,7 +305,7 @@ export default async function HomePage() {
                 {about.portrait_image_url ? (
                   <Image
                     src={about.portrait_image_url}
-                    alt="Ramazan Temelkuran"
+                    alt={settings.site_title}
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 288px, 384px"
@@ -357,7 +325,7 @@ export default async function HomePage() {
                   Yazar Hakkında
                 </p>
                 <h2 className="text-3xl sm:text-4xl font-bold">
-                  Ramazan Temelkuran
+                  {settings.site_title}
                 </h2>
               </div>
               <p className="text-muted leading-relaxed">

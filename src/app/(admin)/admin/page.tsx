@@ -35,6 +35,14 @@ async function getDashboardData() {
     ]);
 
   return {
+    hasError: [
+      booksRes,
+      eventsRes,
+      mediaRes,
+      messagesRes,
+      unreadRes,
+      recentMsgsRes,
+    ].some((result) => Boolean(result.error)),
     bookCount: booksRes.count ?? 0,
     eventCount: eventsRes.count ?? 0,
     mediaCount: mediaRes.count ?? 0,
@@ -52,6 +60,7 @@ export default async function AdminDashboardPage() {
     messageCount,
     unreadCount,
     recentMessages,
+    hasError,
   } = await getDashboardData();
 
   const stats = [
@@ -101,6 +110,15 @@ export default async function AdminDashboardPage() {
           Sitenizin genel durumuna buradan göz atabilirsiniz.
         </p>
       </div>
+
+      {hasError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          Panel verilerinin bir bölümü yüklenemedi. Gösterilen sayılar eksik olabilir; lütfen sayfayı yenileyin.
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

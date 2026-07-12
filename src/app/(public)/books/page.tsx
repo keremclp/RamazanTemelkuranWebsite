@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types/database";
 import BookFilter from "@/components/public/BookFilter";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "Kitaplar",
@@ -11,10 +12,10 @@ export const metadata: Metadata = {
 export default async function BooksPage() {
   const supabase = await createClient();
 
-  const { data: books } = await supabase
-    .from("books")
-    .select("*")
-    .order("display_order", { ascending: true });
+  const [{ data: books }, settings] = await Promise.all([
+    supabase.from("books").select("*").order("display_order", { ascending: true }),
+    getSiteSettings(),
+  ]);
 
   const allBooks: Book[] = books || [];
 
@@ -27,7 +28,7 @@ export default async function BooksPage() {
           </h1>
           <div className="mx-auto mb-4 h-1 w-16 bg-accent" />
           <p className="mx-auto max-w-2xl text-lg text-muted">
-            Ramazan Temelkuran&apos;ın kaleme aldığı tüm eserleri keşfedin.
+            {settings.site_title}&apos;ın kaleme aldığı tüm eserleri keşfedin.
           </p>
         </div>
 

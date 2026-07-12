@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ChevronLeft,
+  ChevronRight,
   Mail,
   MailOpen,
   Reply,
@@ -22,6 +24,7 @@ interface AdminMessagesListProps {
 }
 
 type Filter = "all" | "unread" | "read";
+const messagesPerPage = 10;
 
 const filterLabels: Record<Filter, string> = {
   all: "Tümü",
@@ -32,6 +35,7 @@ const filterLabels: Record<Filter, string> = {
 export default function AdminMessagesList({ messages }: AdminMessagesListProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
 
   const filteredMessages = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("tr");
@@ -51,6 +55,12 @@ export default function AdminMessagesList({ messages }: AdminMessagesListProps) 
         .includes(normalizedSearch);
     });
   }, [filter, messages, search]);
+  const pageCount = Math.max(1, Math.ceil(filteredMessages.length / messagesPerPage));
+  const currentPage = Math.min(page, pageCount - 1);
+  const visibleMessages = filteredMessages.slice(
+    currentPage * messagesPerPage,
+    (currentPage + 1) * messagesPerPage
+  );
 
   return (
     <section className="space-y-5 rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
@@ -70,7 +80,10 @@ export default function AdminMessagesList({ messages }: AdminMessagesListProps) 
             />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(0);
+              }}
               className="w-full rounded-xl border border-border bg-surface py-3 pl-9 pr-4 text-sm text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:w-72"
               placeholder="Mesaj ara..."
             />
@@ -81,7 +94,10 @@ export default function AdminMessagesList({ messages }: AdminMessagesListProps) 
               <button
                 key={key}
                 type="button"
-                onClick={() => setFilter(key)}
+                onClick={() => {
+                  setFilter(key);
+                  setPage(0);
+                }}
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                   filter === key
                     ? "bg-accent text-white"
@@ -105,9 +121,33 @@ export default function AdminMessagesList({ messages }: AdminMessagesListProps) 
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredMessages.map((message) => (
+          {visibleMessages.map((message) => (
             <MessageCard key={message.id} message={message} />
           ))}
+        </div>
+      )}
+
+      {filteredMessages.length > messagesPerPage && (
+        <div className="flex items-center justify-center gap-3 border-t border-border pt-5">
+          <button
+            type="button"
+            onClick={() => setPage(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-primary transition hover:border-accent disabled:opacity-40"
+          >
+            <ChevronLeft size={16} /> Önceki
+          </button>
+          <span className="min-w-16 text-center text-sm text-muted">
+            {currentPage + 1} / {pageCount}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage(currentPage + 1)}
+            disabled={currentPage === pageCount - 1}
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-primary transition hover:border-accent disabled:opacity-40"
+          >
+            Sonraki <ChevronRight size={16} />
+          </button>
         </div>
       )}
     </section>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { getStorageObjectPath } from "@/lib/supabase/storage";
 import { Upload, X, Loader2 } from "lucide-react";
+import { validateImageUpload } from "@/lib/validation";
 
 interface ImageUploaderProps {
   currentImageUrl?: string | null;
@@ -13,7 +14,11 @@ interface ImageUploaderProps {
   onImageRemoved?: () => void;
   onPersistedImageRemoved?: (
     url: string
-  ) => Promise<{ message: string; cancelled?: boolean }>;
+  ) => Promise<{
+    message: string;
+    cancelled?: boolean;
+    committedImageUrl?: string | null;
+  }>;
   bucket?: string;
   folder?: string;
   className?: string;
@@ -62,15 +67,9 @@ export default function ImageUploader({
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        setError("Lütfen bir görsel dosyası seçin.");
-        return;
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Dosya boyutu 5MB'dan küçük olmalıdır.");
+      const validationError = validateImageUpload(file);
+      if (validationError) {
+        setError(validationError);
         return;
       }
 
@@ -100,6 +99,23 @@ export default function ImageUploader({
           data: { publicUrl },
         } = supabase.storage.from(bucket).getPublicUrl(fileName);
 
+        const { error: trackingError } = await supabase
+          .from("temporary_uploads")
+          .insert({ bucket, object_path: fileName, url: publicUrl });
+
+        if (trackingError) {
+          await supabase.storage.from(bucket).remove([fileName]);
+          throw trackingError;
+        }
+
+        if (preview && preview !== persistedImageUrl.current) {
+          const previousObjectPath = getStorageObjectPath(preview, bucket);
+          if (previousObjectPath) {
+            await supabase.storage.from(bucket).remove([previousObjectPath]);
+            await supabase.from("temporary_uploads").delete().eq("url", preview);
+          }
+        }
+
         setPreview(publicUrl);
         onImageUploaded(publicUrl);
       } catch (err) {
@@ -109,7 +125,7 @@ export default function ImageUploader({
         setUploading(false);
       }
     },
-    [bucket, folder, onImageUploaded]
+    [bucket, folder, onImageUploaded, preview]
   );
 
   async function handleRemove() {
@@ -124,6 +140,12 @@ export default function ImageUploader({
       if (result.cancelled) {
         setRemoving(false);
         return;
+      }
+
+      if (result.committedImageUrl === null) {
+        persistedImageUrl.current = null;
+        setPreview(null);
+        onImageRemoved?.();
       }
 
       if (result.message) {
@@ -155,6 +177,8 @@ export default function ImageUploader({
           setRemoving(false);
           return;
         }
+
+        await supabase.from("temporary_uploads").delete().eq("url", preview);
       }
     }
 
@@ -205,7 +229,7 @@ export default function ImageUploader({
                 {replaceLabel}
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={handleUpload}
                   className="hidden"
                   disabled={uploading || removing}
@@ -228,7 +252,7 @@ export default function ImageUploader({
             )}
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleUpload}
               className="hidden"
               disabled={uploading || removing}

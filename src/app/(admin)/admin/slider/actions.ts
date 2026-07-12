@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
+import {
+  commitTemporaryUpload,
+  discardTemporaryUpload,
+  removeStorageFilesByUrls,
+} from "@/lib/supabase/storage";
 import {
   HERO_SLIDE_CTA_DEFAULT_TEXT,
   isHeroSlideCtaType,
@@ -137,10 +141,12 @@ export async function createHeroSlideAction(
   const { error } = await supabase.from("hero_slides").insert(parsed.data);
 
   if (error) {
+    await discardTemporaryUpload(supabase, parsed.data.image_url);
     console.error("Hero slide create error:", error);
     return initialError("Slayt kaydedilemedi. Lütfen tekrar deneyin.");
   }
 
+  await commitTemporaryUpload(supabase, parsed.data.image_url);
   revalidateSliderPages();
   redirect("/admin/slider?status=created");
 }
@@ -182,10 +188,14 @@ export async function updateHeroSlideAction(
     .eq("id", id);
 
   if (error) {
+    if (existingSlide.image_url !== parsed.data.image_url) {
+      await discardTemporaryUpload(supabase, parsed.data.image_url);
+    }
     console.error("Hero slide update error:", error);
     return initialError("Slayt güncellenemedi. Lütfen tekrar deneyin.");
   }
 
+  await commitTemporaryUpload(supabase, parsed.data.image_url);
   if (existingSlide.image_url !== parsed.data.image_url) {
     await removeStorageFilesByUrls(supabase, [existingSlide.image_url]);
   }
@@ -220,16 +230,6 @@ export async function deleteHeroSlideImageAction(
     return initialError("Slider görseli zaten değişmiş. Lütfen sayfayı yenileyin.");
   }
 
-  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
-    imageUrl,
-  ]);
-
-  if (!storageCleanupSucceeded) {
-    return initialError(
-      "Slider görseli Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
-    );
-  }
-
   const { error: updateError } = await supabase
     .from("hero_slides")
     .update({ image_url: "" })
@@ -241,9 +241,18 @@ export async function deleteHeroSlideImageAction(
     return initialError("Slider görseli kaldırılamadı. Lütfen tekrar deneyin.");
   }
 
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    imageUrl,
+  ]);
+
   revalidateSliderPages();
   revalidatePath(`/admin/slider/${id}`);
-  return { message: "", committedImageUrl: null };
+  return {
+    message: storageCleanupSucceeded
+      ? ""
+      : "Görsel siteden kaldırıldı, ancak Storage temizliği tamamlanamadı.",
+    committedImageUrl: null,
+  };
 }
 
 export async function deleteHeroSlideAction(

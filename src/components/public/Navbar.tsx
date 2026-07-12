@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, BookOpen } from "lucide-react";
@@ -16,6 +16,8 @@ export default function Navbar({
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +28,39 @@ export default function Navbar({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const firstLink = mobileMenuRef.current?.querySelector<HTMLElement>("a");
+    firstLink?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        menuButtonRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+        'a, button:not([disabled])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
 
   return (
     <header
@@ -41,11 +76,12 @@ export default function Navbar({
           <Link
             href="/"
             onClick={() => setIsOpen(false)}
-            className="group flex items-center gap-2 no-underline"
+            className="group flex min-w-0 items-center gap-3 no-underline"
           >
-            <span
-              className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl font-bold tracking-wide text-primary transition-colors duration-[var(--transition-base)] group-hover:text-accent"
-            >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-sm transition-colors duration-[var(--transition-base)] group-hover:bg-accent-dark">
+              <BookOpen size={21} strokeWidth={2.1} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 truncate font-[family-name:var(--font-heading)] text-lg font-bold tracking-wide text-primary transition-colors duration-[var(--transition-base)] group-hover:text-accent sm:text-2xl">
               {siteTitle}
             </span>
           </Link>
@@ -88,6 +124,7 @@ export default function Navbar({
 
           {/* Mobile Menu Button */}
           <button
+            ref={menuButtonRef}
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-2 text-primary transition-colors hover:text-accent"
             aria-label={isOpen ? "Menüyü kapat" : "Menüyü aç"}
@@ -98,6 +135,7 @@ export default function Navbar({
 
         {/* Mobile Navigation */}
         <div
+          ref={mobileMenuRef}
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
             isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
           }`}

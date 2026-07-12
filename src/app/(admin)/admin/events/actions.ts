@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
+import {
+  commitTemporaryUpload,
+  discardTemporaryUpload,
+  removeStorageFilesByUrls,
+} from "@/lib/supabase/storage";
 import { extractYouTubeId } from "@/lib/utils/helpers";
 
 export interface EventFormState {
@@ -196,16 +200,6 @@ export async function deleteEventAction(id: string): Promise<EventFormState> {
     return initialEventError("Etkinliğe bağlı medya okunamadı. Lütfen tekrar deneyin.");
   }
 
-  const { error: mediaError } = await supabase
-    .from("media")
-    .delete()
-    .eq("event_id", id);
-
-  if (mediaError) {
-    console.error("Event media delete error:", mediaError);
-    return initialEventError("Etkinliğe bağlı medya silinemedi. Lütfen tekrar deneyin.");
-  }
-
   const { error } = await supabase.from("events").delete().eq("id", id);
 
   if (error) {
@@ -241,8 +235,15 @@ export async function createMediaAction(
     .single();
 
   if (error) {
+    if (parsed.data.type === "photo") {
+      await discardTemporaryUpload(supabase, parsed.data.url);
+    }
     console.error("Media create error:", error);
     return initialMediaError("Medya kaydedilemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (parsed.data.type === "photo") {
+    await commitTemporaryUpload(supabase, parsed.data.url);
   }
 
   if (shouldUseOnHomepage && parsed.data.type === "photo" && media?.id) {
@@ -290,17 +291,6 @@ export async function deleteMediaAction(
     return initialMediaError("Medya kaydı bulunamadı.");
   }
 
-  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
-    media.url,
-    media.thumbnail_url,
-  ]);
-
-  if (!storageCleanupSucceeded) {
-    return initialMediaError(
-      "Medya Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
-    );
-  }
-
   await supabase
     .from("events")
     .update({ homepage_media_id: null })
@@ -318,8 +308,17 @@ export async function deleteMediaAction(
     return initialMediaError("Medya silinemedi. Lütfen tekrar deneyin.");
   }
 
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    media.url,
+    media.thumbnail_url,
+  ]);
+
   revalidateEventPages(eventId);
-  return { message: "" };
+  return {
+    message: storageCleanupSucceeded
+      ? ""
+      : "Medya siteden kaldırıldı, ancak Storage temizliği tamamlanamadı.",
+  };
 }
 
 export async function deleteGalleryMediaAction(
@@ -338,17 +337,6 @@ export async function deleteGalleryMediaAction(
     return initialMediaError("Medya kaydı bulunamadı.");
   }
 
-  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
-    media.url,
-    media.thumbnail_url,
-  ]);
-
-  if (!storageCleanupSucceeded) {
-    return initialMediaError(
-      "Medya Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
-    );
-  }
-
   if (media.event_id) {
     await supabase
       .from("events")
@@ -364,8 +352,17 @@ export async function deleteGalleryMediaAction(
     return initialMediaError("Medya silinemedi. Lütfen tekrar deneyin.");
   }
 
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    media.url,
+    media.thumbnail_url,
+  ]);
+
   revalidateEventPages(media.event_id ?? undefined);
-  return { message: "" };
+  return {
+    message: storageCleanupSucceeded
+      ? ""
+      : "Medya siteden kaldırıldı, ancak Storage temizliği tamamlanamadı.",
+  };
 }
 
 export async function createGalleryMediaAction(
@@ -395,8 +392,15 @@ export async function createGalleryMediaAction(
     .single();
 
   if (error) {
+    if (parsed.data.type === "photo") {
+      await discardTemporaryUpload(supabase, parsed.data.url);
+    }
     console.error("Gallery media create error:", error);
     return initialMediaError("Medya kaydedilemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (parsed.data.type === "photo") {
+    await commitTemporaryUpload(supabase, parsed.data.url);
   }
 
   if (shouldUseOnHomepage && parsed.data.type === "photo" && media?.id) {
@@ -475,8 +479,15 @@ export async function updateGalleryMediaAction(
     .eq("id", mediaId);
 
   if (error) {
+    if (existingMedia.type === "photo" && existingMedia.url !== url) {
+      await discardTemporaryUpload(supabase, url);
+    }
     console.error("Gallery media update error:", error);
     return initialMediaError("Medya güncellenemedi. Lütfen tekrar deneyin.");
+  }
+
+  if (existingMedia.type === "photo") {
+    await commitTemporaryUpload(supabase, url);
   }
 
   if (existingMedia.type === "photo" && existingMedia.url !== url) {

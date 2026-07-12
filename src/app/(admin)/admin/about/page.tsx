@@ -35,20 +35,20 @@ export default async function AdminAboutPage() {
         </p>
       </div>
 
-      {error && (
+      {error ? (
         <div
           role="alert"
           className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger"
         >
-          Hakkında içeriği yüklenemedi. Form boş değerlerle açıldı.
+          Hakkında içeriği yüklenemedi. Verilerin üzerine yazmamak için düzenleme formu açılmadı. Lütfen sayfayı yenileyin.
         </div>
+      ) : (
+        <AboutForm
+          action={action}
+          deletePortraitAction={deletePortraitAction}
+          about={about ?? undefined}
+        />
       )}
-
-      <AboutForm
-        action={action}
-        deletePortraitAction={deletePortraitAction}
-        about={about ?? undefined}
-      />
     </div>
   );
 }

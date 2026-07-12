@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ResolvedHeroSlide } from "@/lib/types/database";
+import ResilientImage from "./ResilientImage";
 
 interface HeroSliderProps {
   slides: ResolvedHeroSlide[];
@@ -51,9 +51,10 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
         >
           {/* Background Image or Gradient Fallback */}
           {slide.image_url ? (
-            <Image
+            <ResilientImage
               src={slide.image_url}
               alt={slide.title || ""}
+              fallback={<div className="absolute inset-0 bg-primary" />}
               fill
               className="object-cover"
               priority={index === 0}
@@ -90,12 +91,12 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
           >
             <div className="max-w-2xl space-y-6">
               {slide.title && (
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                <h1 className="max-w-full break-words text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
                   {slide.title}
                 </h1>
               )}
               {slide.subtitle && (
-                <p className="text-lg sm:text-xl text-white/70 leading-relaxed">
+                <p className="max-w-full break-words text-lg leading-relaxed text-white/70 sm:text-xl">
                   {slide.subtitle}
                 </p>
               )}
@@ -115,7 +116,7 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
                         ? "noopener noreferrer"
                         : undefined
                     }
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline group"
+                    className="inline-flex max-w-full items-center gap-2 break-words rounded-lg bg-accent px-6 py-3 font-medium text-white no-underline transition-all duration-200 hover:bg-accent-dark group"
                   >
                     {slide.cta_text}
                     <ChevronRight

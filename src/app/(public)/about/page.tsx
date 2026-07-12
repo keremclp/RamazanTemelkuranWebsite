@@ -3,6 +3,7 @@ import Image from "next/image";
 import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { AboutContent } from "@/lib/types/database";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata: Metadata = {
   title: "Hakkında",
@@ -44,10 +45,10 @@ const socialLabels: Record<(typeof socialPlatforms)[number], string> = {
 export default async function AboutPage() {
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("about_content")
-    .select("*")
-    .single();
+  const [{ data }, settings] = await Promise.all([
+    supabase.from("about_content").select("*").single(),
+    getSiteSettings(),
+  ]);
 
   const about = data as AboutContent | null;
   const socialEntries = socialPlatforms.flatMap((platform) => {
@@ -74,7 +75,7 @@ export default async function AboutPage() {
               {about?.portrait_image_url ? (
                 <Image
                   src={about.portrait_image_url}
-                  alt="Ramazan Temelkuran"
+                  alt={settings.site_title}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 40vw"
@@ -91,7 +92,7 @@ export default async function AboutPage() {
           {/* Biography */}
           <div className="lg:col-span-3 flex flex-col justify-center">
             <h2 className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-heading)] text-primary mb-6">
-              Ramazan Temelkuran
+              {settings.site_title}
             </h2>
 
             {about?.biography ? (

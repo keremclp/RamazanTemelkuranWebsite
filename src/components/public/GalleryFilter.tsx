@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Camera, Play } from "lucide-react";
 import type { EventWithMedia, Media } from "@/lib/types/database";
 import { cn, getYouTubeThumbnail, extractYouTubeId } from "@/lib/utils/helpers";
 import Lightbox from "./Lightbox";
+import ResilientImage from "./ResilientImage";
 
 interface GalleryFilterProps {
   events: EventWithMedia[];
@@ -47,7 +47,11 @@ export default function GalleryFilter({ events }: GalleryFilterProps) {
   const handleVideoClick = (url: string) => {
     const videoId = extractYouTubeId(url);
     if (videoId) {
-      window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
+      window.open(
+        `https://www.youtube.com/watch?v=${videoId}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
     }
   };
 
@@ -81,10 +85,11 @@ export default function GalleryFilter({ events }: GalleryFilterProps) {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {event.media.map((media, index) => (
-              <div
+              <button
+                type="button"
                 key={media.id}
                 className={cn(
-                  "group relative aspect-square rounded-[var(--radius-lg)] overflow-hidden cursor-pointer",
+                  "group relative aspect-square rounded-[var(--radius-lg)] overflow-hidden cursor-pointer text-left",
                   "shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]",
                   "hover:-translate-y-0.5 transition-all duration-300"
                 )}
@@ -93,12 +98,22 @@ export default function GalleryFilter({ events }: GalleryFilterProps) {
                     ? openLightbox(event.media, index)
                     : handleVideoClick(media.url)
                 }
+                aria-label={
+                  media.type === "photo"
+                    ? `${media.caption || "Fotoğraf"} görselini büyüt`
+                    : `${media.caption || "Video"} videosunu YouTube'da aç`
+                }
               >
                 {media.type === "photo" ? (
                   media.url ? (
-                    <Image
+                    <ResilientImage
                       src={media.url}
                       alt={media.caption || "Fotoğraf"}
+                      fallback={
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/20 to-primary/10">
+                          <Camera className="h-10 w-10 text-accent/50" />
+                        </div>
+                      }
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
@@ -112,9 +127,14 @@ export default function GalleryFilter({ events }: GalleryFilterProps) {
                   <>
                     {/* Video thumbnail */}
                     {getYouTubeThumbnail(media.url) ? (
-                      <Image
+                      <ResilientImage
                         src={getYouTubeThumbnail(media.url)!}
                         alt={media.caption || "Video"}
+                        fallback={
+                          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/30 to-accent/20">
+                            <Play className="h-10 w-10 text-white/60" />
+                          </div>
+                        }
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
@@ -139,7 +159,7 @@ export default function GalleryFilter({ events }: GalleryFilterProps) {
                     <p className="text-white text-sm truncate">{media.caption}</p>
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </section>

@@ -1,4 +1,7 @@
-import type { HeroSlideCtaType } from "@/lib/types/database";
+import type {
+  HeroSlideCtaType,
+  SiteSettings,
+} from "@/lib/types/database";
 
 export const HERO_SLIDE_CTA_TYPES: HeroSlideCtaType[] = [
   "none",
@@ -47,4 +50,35 @@ export function inferLegacyCtaType(link: string | null): HeroSlideCtaType {
   return link.startsWith("http://") || link.startsWith("https://")
     ? "external"
     : "none";
+}
+
+export function resolveHeroSlideCtaHref(
+  slide: {
+    cta_type: HeroSlideCtaType;
+    cta_link: string | null;
+    cta_external_url: string | null;
+    cta_book?: { slug: string } | null;
+  },
+  settings: Pick<SiteSettings, "shopier_main_url">
+) {
+  switch (slide.cta_type) {
+    case "books":
+      return "/books";
+    case "book":
+      return slide.cta_book?.slug ? `/books/${slide.cta_book.slug}` : null;
+    case "gallery":
+      return "/gallery";
+    case "about":
+      return "/about";
+    case "contact":
+      return "/contact";
+    case "shopier":
+      return settings.shopier_main_url || null;
+    case "external":
+      return slide.cta_external_url;
+    case "none":
+      return null;
+    default:
+      return slide.cta_link;
+  }
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { BookOpen, ExternalLink } from "lucide-react";
 import type { Book } from "@/lib/types/database";
+import ResilientImage from "./ResilientImage";
 import { cn } from "@/lib/utils/helpers";
 
 interface BookFilterProps {
@@ -26,9 +26,14 @@ export default function BookFilter({ books }: BookFilterProps) {
           >
             <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-accent/20 to-primary/10">
               {book.cover_image_url ? (
-                <Image
+                <ResilientImage
                   src={book.cover_image_url}
                   alt={book.title}
+                  fallback={
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/30 to-primary/20">
+                      <BookOpen className="h-16 w-16 text-accent/60" />
+                    </div>
+                  }
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

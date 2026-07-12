@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   AlertCircle,
   ChevronLeft,
@@ -12,6 +12,7 @@ import {
 import ImageUploader from "@/components/admin/ImageUploader";
 import type { AboutContent, Milestone, SocialLinks } from "@/lib/types/database";
 import type { AboutFormState } from "@/app/(admin)/admin/about/actions";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 
 interface AboutFormProps {
   action: (
@@ -55,6 +56,12 @@ export default function AboutForm({
       : [{ ...emptyMilestone }]
   );
   const [milestonePage, setMilestonePage] = useState(0);
+  const { markDirty, markSaved } = useUnsavedChanges();
+
+  useEffect(() => {
+    if (state.message) markDirty();
+    if (state.success) markSaved();
+  }, [markDirty, markSaved, state.message, state.success]);
 
   const totalMilestonePages = Math.max(
     1,
@@ -105,7 +112,12 @@ export default function AboutForm({
   }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form
+      action={formAction}
+      className="space-y-6"
+      onChangeCapture={markDirty}
+      onSubmitCapture={markSaved}
+    >
       {state.message && (
         <div
           role="alert"

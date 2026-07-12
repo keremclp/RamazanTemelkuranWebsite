@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import Image from "next/image";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useCallback, useRef } from "react";
+import { X, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import type { Media } from "@/lib/types/database";
+import ResilientImage from "./ResilientImage";
 
 interface LightboxProps {
   media: Media[];
@@ -21,6 +21,8 @@ export default function Lightbox({
   const currentMedia = media[currentIndex];
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < media.length - 1;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const goNext = useCallback(() => {
     if (hasNext) onNavigate(currentIndex + 1);
@@ -31,18 +33,36 @@ export default function Lightbox({
   }, [hasPrev, currentIndex, onNavigate]);
 
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "Tab") {
+        const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
+    closeButtonRef.current?.focus();
 
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
     };
   }, [onClose, goNext, goPrev]);
 
@@ -50,11 +70,16 @@ export default function Lightbox({
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Galeri görseli"
       className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-fade-in"
       onClick={onClose}
     >
       {/* Close Button */}
       <button
+        ref={closeButtonRef}
         onClick={onClose}
         className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
         aria-label="Kapat"
@@ -100,9 +125,15 @@ export default function Lightbox({
         className="relative w-full h-full max-w-5xl max-h-[85vh] mx-auto p-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <Image
+        <ResilientImage
           src={currentMedia.url}
           alt={currentMedia.caption || "Fotoğraf"}
+          fallback={
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/70">
+              <ImageOff size={38} />
+              <p>Görsel şu anda yüklenemiyor.</p>
+            </div>
+          }
           fill
           className="object-contain"
           sizes="100vw"

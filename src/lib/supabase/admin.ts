@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { cleanupStaleTemporaryUploads } from "@/lib/supabase/storage";
+
+let lastTemporaryUploadCleanup = 0;
 
 export async function getAdminClient() {
   const supabase = await createClient();
@@ -14,6 +17,11 @@ export async function getAdminClient() {
 
   if (error) {
     console.error("Admin authorization check error:", error);
+  }
+
+  if (isAdmin === true && Date.now() - lastTemporaryUploadCleanup > 60_000) {
+    lastTemporaryUploadCleanup = Date.now();
+    await cleanupStaleTemporaryUploads(supabase);
   }
 
   return {

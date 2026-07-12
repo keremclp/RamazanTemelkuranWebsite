@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   Edit3,
   ImageIcon,
@@ -26,6 +28,7 @@ import {
   updateGalleryMediaAction,
 } from "@/app/(admin)/admin/events/actions";
 import { formatDateShort, getYouTubeThumbnail } from "@/lib/utils/helpers";
+import { useUnsavedChanges } from "@/lib/hooks/use-unsaved-changes";
 
 interface AdminGalleryLibraryProps {
   media: AdminGalleryMedia[];
@@ -34,6 +37,7 @@ interface AdminGalleryLibraryProps {
 }
 
 type TypeFilter = "all" | "photo" | "video";
+const mediaPerPage = 9;
 
 const initialState: MediaFormState = { message: "" };
 
@@ -50,6 +54,7 @@ export default function AdminGalleryLibrary({
 }: AdminGalleryLibraryProps) {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [eventFilter, setEventFilter] = useState(initialEventId ?? "all");
+  const [page, setPage] = useState(0);
 
   const filteredMedia = useMemo(
     () =>
@@ -60,6 +65,12 @@ export default function AdminGalleryLibrary({
         return typeMatches && eventMatches;
       }),
     [eventFilter, media, typeFilter]
+  );
+  const pageCount = Math.max(1, Math.ceil(filteredMedia.length / mediaPerPage));
+  const currentPage = Math.min(page, pageCount - 1);
+  const visibleMedia = filteredMedia.slice(
+    currentPage * mediaPerPage,
+    (currentPage + 1) * mediaPerPage
   );
 
   return (
@@ -78,7 +89,10 @@ export default function AdminGalleryLibrary({
           <div className="flex flex-col gap-3 sm:flex-row">
             <select
               value={typeFilter}
-              onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}
+              onChange={(event) => {
+                setTypeFilter(event.target.value as TypeFilter);
+                setPage(0);
+              }}
               className={selectClassName}
               aria-label="Medya türüne göre filtrele"
             >
@@ -89,7 +103,10 @@ export default function AdminGalleryLibrary({
 
             <select
               value={eventFilter}
-              onChange={(event) => setEventFilter(event.target.value)}
+              onChange={(event) => {
+                setEventFilter(event.target.value);
+                setPage(0);
+              }}
               className={selectClassName}
               aria-label="Etkinliğe göre filtrele"
             >
@@ -113,9 +130,33 @@ export default function AdminGalleryLibrary({
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {filteredMedia.map((item) => (
+            {visibleMedia.map((item) => (
               <GalleryMediaCard key={item.id} media={item} events={events} />
             ))}
+          </div>
+        )}
+
+        {filteredMedia.length > mediaPerPage && (
+          <div className="flex items-center justify-center gap-3 border-t border-border pt-5">
+            <button
+              type="button"
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage === 0}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-primary transition hover:border-accent disabled:opacity-40"
+            >
+              <ChevronLeft size={16} /> Önceki
+            </button>
+            <span className="min-w-16 text-center text-sm text-muted">
+              {currentPage + 1} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage === pageCount - 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-primary transition hover:border-accent disabled:opacity-40"
+            >
+              Sonraki <ChevronRight size={16} />
+            </button>
           </div>
         )}
       </section>
@@ -158,6 +199,7 @@ function MediaCreateForm({
   type: "photo" | "video";
   events: Pick<Event, "id" | "title" | "event_date" | "homepage_media_id">[];
 }) {
+  const { markDirty, markSaved } = useUnsavedChanges();
   const router = useRouter();
   const [state, formAction, pending] = useActionState(
     createGalleryMediaAction,
@@ -166,11 +208,21 @@ function MediaCreateForm({
   const [photoUrl, setPhotoUrl] = useState("");
 
   useEffect(() => {
-    if (state.success) router.refresh();
-  }, [router, state.success]);
+    if (state.success) {
+      markSaved();
+      router.refresh();
+    } else if (state.message) {
+      markDirty();
+    }
+  }, [markDirty, markSaved, router, state.message, state.success]);
 
   return (
-    <form action={formAction} className="rounded-2xl border border-border/70 p-4">
+    <form
+      action={formAction}
+      className="rounded-2xl border border-border/70 p-4"
+      onChangeCapture={markDirty}
+      onSubmitCapture={markSaved}
+    >
       <input type="hidden" name="type" value={type} />
 
       <div className="mb-4 flex items-center gap-2">
@@ -441,13 +493,19 @@ function MediaEditForm({
   photoUrl: string;
   setPhotoUrl: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const { markDirty, markSaved } = useUnsavedChanges();
   const router = useRouter();
   const action = updateGalleryMediaAction.bind(null, media.id);
   const [state, formAction, pending] = useActionState(action, initialState);
 
   useEffect(() => {
-    if (state.success) router.refresh();
-  }, [router, state.success]);
+    if (state.success) {
+      markSaved();
+      router.refresh();
+    } else if (state.message) {
+      markDirty();
+    }
+  }, [markDirty, markSaved, router, state.message, state.success]);
 
   useEffect(() => {
     if (state.committedImageUrl !== undefined) {
@@ -456,7 +514,12 @@ function MediaEditForm({
   }, [setPhotoUrl, state.committedImageUrl]);
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form
+      action={formAction}
+      className="space-y-3"
+      onChangeCapture={markDirty}
+      onSubmitCapture={markSaved}
+    >
       <FormMessage state={state} />
 
       <div className="grid gap-3 sm:grid-cols-2">

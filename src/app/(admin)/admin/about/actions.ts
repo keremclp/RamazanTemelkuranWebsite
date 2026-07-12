@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
+import {
+  commitTemporaryUpload,
+  discardTemporaryUpload,
+  removeStorageFilesByUrls,
+} from "@/lib/supabase/storage";
 import type { Milestone, SocialLinks } from "@/lib/types/database";
 
 export interface AboutFormState {
@@ -154,10 +158,14 @@ export async function updateAboutContentAction(
   const { error } = await query;
 
   if (error) {
+    if (previousPortraitUrl !== parsed.data.portrait_image_url) {
+      await discardTemporaryUpload(supabase, parsed.data.portrait_image_url);
+    }
     console.error("About content update error:", error);
     return initialError("Hakkında içeriği kaydedilemedi. Lütfen tekrar deneyin.");
   }
 
+  await commitTemporaryUpload(supabase, parsed.data.portrait_image_url);
   if (previousPortraitUrl !== parsed.data.portrait_image_url) {
     await removeStorageFilesByUrls(supabase, [previousPortraitUrl]);
   }
@@ -196,16 +204,6 @@ export async function deleteAboutPortraitAction(
     return { message: "", committedImageUrl: null };
   }
 
-  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
-    imageUrl,
-  ]);
-
-  if (!storageCleanupSucceeded) {
-    return initialError(
-      "Portre görseli Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
-    );
-  }
-
   const { error: updateError } = await supabase
     .from("about_content")
     .update({ portrait_image_url: null })
@@ -217,9 +215,15 @@ export async function deleteAboutPortraitAction(
     return initialError("Portre görseli kaldırılamadı. Lütfen tekrar deneyin.");
   }
 
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    imageUrl,
+  ]);
+
   revalidateAboutPages();
   return {
-    message: "",
+    message: storageCleanupSucceeded
+      ? ""
+      : "Portre siteden kaldırıldı, ancak Storage temizliği tamamlanamadı.",
     success: "Portre görseli kaldırıldı.",
     committedImageUrl: null,
   };

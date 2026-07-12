@@ -43,7 +43,7 @@ CREATE TABLE events (
 -- ============================================
 CREATE TABLE media (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  event_id UUID REFERENCES events(id) ON DELETE SET NULL,
+  event_id UUID REFERENCES events(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('photo', 'video')),
   url TEXT NOT NULL,
   thumbnail_url TEXT,
@@ -123,6 +123,16 @@ CREATE TABLE admin_users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Browser uploads remain temporary until the related content row is saved.
+CREATE TABLE temporary_uploads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  bucket TEXT NOT NULL DEFAULT 'media',
+  object_path TEXT NOT NULL UNIQUE,
+  url TEXT NOT NULL UNIQUE,
+  uploaded_by UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ============================================
 -- INDEXES
 -- ============================================
@@ -134,6 +144,7 @@ CREATE INDEX idx_events_date ON events(event_date DESC);
 CREATE INDEX idx_hero_slides_active ON hero_slides(is_active, display_order);
 CREATE INDEX idx_hero_slides_cta_book ON hero_slides(cta_book_id);
 CREATE INDEX idx_contact_messages_read ON contact_messages(is_read, created_at DESC);
+CREATE INDEX idx_temporary_uploads_created_at ON temporary_uploads(created_at);
 
 -- ============================================
 -- AUTO-UPDATE updated_at TRIGGER
@@ -188,6 +199,7 @@ ALTER TABLE about_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE temporary_uploads ENABLE ROW LEVEL SECURITY;
 
 -- PUBLIC READ policies (anyone can read public content)
 CREATE POLICY "Public can read books" ON books
@@ -245,12 +257,31 @@ CREATE POLICY "Admin can manage site settings" ON site_settings
   FOR ALL TO authenticated
   USING (public.is_admin()) WITH CHECK (public.is_admin());
 
+CREATE POLICY "Admin can manage temporary uploads" ON temporary_uploads
+  FOR ALL TO authenticated
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
+
 -- ============================================
 -- SUPABASE STORAGE
 -- ============================================
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('media', 'media', true)
-ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+INSERT INTO storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+)
+VALUES (
+  'media',
+  'media',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 CREATE POLICY "Public can read media bucket files" ON storage.objects
   FOR SELECT TO public

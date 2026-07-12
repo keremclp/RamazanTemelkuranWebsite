@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { removeStorageFilesByUrls } from "@/lib/supabase/storage";
+import {
+  commitTemporaryUpload,
+  discardTemporaryUpload,
+  removeStorageFilesByUrls,
+} from "@/lib/supabase/storage";
 import { slugify } from "@/lib/utils/helpers";
+import { isHttpUrl } from "@/lib/validation";
 
 export interface BookFormState {
   message: string;
@@ -62,9 +67,7 @@ function parseBookForm(formData: FormData): ParsedBookForm {
   if (!description) return { error: "Kitap açıklaması gereklidir." };
 
   if (shopierUrl) {
-    try {
-      new URL(shopierUrl);
-    } catch {
+    if (!isHttpUrl(shopierUrl)) {
       return { error: "Shopier bağlantısı geçerli bir URL olmalıdır." };
     }
   }
@@ -162,6 +165,7 @@ export async function createBookAction(
     .insert({ ...parsed.data, slug });
 
   if (error) {
+    await discardTemporaryUpload(supabase, parsed.data.cover_image_url);
     if (error.code === "23505") {
       return initialError("Kitap URL'si otomatik oluşturulurken çakışma oluştu.");
     }
@@ -169,6 +173,7 @@ export async function createBookAction(
     return initialError("Kitap kaydedilemedi. Lütfen tekrar deneyin.");
   }
 
+  await commitTemporaryUpload(supabase, parsed.data.cover_image_url);
   revalidateBookPages(slug);
   redirect("/admin/books?status=created");
 }
@@ -199,6 +204,9 @@ export async function updateBookAction(
     .eq("id", id);
 
   if (error) {
+    if (existingBook?.cover_image_url !== parsed.data.cover_image_url) {
+      await discardTemporaryUpload(supabase, parsed.data.cover_image_url);
+    }
     if (error.code === "23505") {
       return initialError("Kitap URL'si otomatik oluşturulurken çakışma oluştu.");
     }
@@ -206,6 +214,7 @@ export async function updateBookAction(
     return initialError("Kitap güncellenemedi. Lütfen tekrar deneyin.");
   }
 
+  await commitTemporaryUpload(supabase, parsed.data.cover_image_url);
   if (existingBook?.cover_image_url !== parsed.data.cover_image_url) {
     await removeStorageFilesByUrls(supabase, [existingBook?.cover_image_url]);
   }
@@ -241,16 +250,6 @@ export async function deleteBookCoverAction(
     return initialError("Kapak görseli zaten değişmiş. Lütfen sayfayı yenileyin.");
   }
 
-  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
-    imageUrl,
-  ]);
-
-  if (!storageCleanupSucceeded) {
-    return initialError(
-      "Kapak görseli Supabase Storage'dan silinemedi. Storage silme politikasını kontrol edip tekrar deneyin."
-    );
-  }
-
   const { error: updateError } = await supabase
     .from("books")
     .update({ cover_image_url: null })
@@ -262,8 +261,17 @@ export async function deleteBookCoverAction(
     return initialError("Kapak görseli kaldırılamadı. Lütfen tekrar deneyin.");
   }
 
+  const storageCleanupSucceeded = await removeStorageFilesByUrls(supabase, [
+    imageUrl,
+  ]);
+
   revalidateBookPages(book.slug);
-  return { message: "", committedImageUrl: null };
+  return {
+    message: storageCleanupSucceeded
+      ? ""
+      : "Görsel siteden kaldırıldı, ancak Storage temizliği tamamlanamadı.",
+    committedImageUrl: null,
+  };
 }
 
 export async function deleteBookAction(id: string): Promise<BookFormState> {
