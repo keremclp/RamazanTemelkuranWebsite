@@ -128,6 +128,8 @@ export default function Navbar({
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-2 text-primary transition-colors hover:text-accent"
             aria-label={isOpen ? "Menüyü kapat" : "Menüyü aç"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -135,7 +137,10 @@ export default function Navbar({
 
         {/* Mobile Navigation */}
         <div
+          id="mobile-navigation"
           ref={mobileMenuRef}
+          aria-hidden={!isOpen}
+          inert={!isOpen}
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
             isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
           }`}

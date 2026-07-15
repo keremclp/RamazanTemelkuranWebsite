@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createHash } from "node:crypto";
+import { createServiceClient } from "@/lib/supabase/service";
 
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX = 5;
+const MAX_REQUEST_BYTES = 16 * 1024;
 const MAX_FIELD_LENGTH = {
   name: 120,
   email: 254,
   subject: 160,
   message: 3000,
 };
-
-type RateLimitEntry = {
-  count: number;
-  resetAt: number;
-};
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -28,23 +21,6 @@ function getClientIp(request: NextRequest) {
   );
 }
 
-function isRateLimited(key: string) {
-  const now = Date.now();
-  const existing = rateLimitStore.get(key);
-
-  if (!existing || existing.resetAt <= now) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetAt: now + RATE_LIMIT_WINDOW_MS,
-    });
-    return false;
-  }
-
-  existing.count += 1;
-  rateLimitStore.set(key, existing);
-  return existing.count > RATE_LIMIT_MAX;
-}
-
 function getText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -55,7 +31,17 @@ function jsonError(error: string, status: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BYTES) {
+      return jsonError("İstek çok büyük.", 413);
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(rawBody) as Record<string, unknown>;
+    } catch {
+      return jsonError("Geçersiz istek.", 400);
+    }
 
     const name = getText(body.name);
     const email = getText(body.email).toLowerCase();
@@ -65,14 +51,6 @@ export async function POST(request: NextRequest) {
 
     if (website) {
       return jsonError("Mesaj gönderilemedi.", 400);
-    }
-
-    const rateLimitKey = getClientIp(request);
-    if (isRateLimited(rateLimitKey)) {
-      return jsonError(
-        "Çok fazla mesaj gönderildi. Lütfen daha sonra tekrar deneyiniz.",
-        429
-      );
     }
 
     if (!name) return jsonError("Ad soyad gereklidir.", 400);
@@ -101,18 +79,29 @@ export async function POST(request: NextRequest) {
       return jsonError("Mesaj çok uzun.", 400);
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
+    const clientKey = createHash("sha256")
+      .update(getClientIp(request))
+      .digest("hex");
 
-    const { error } = await supabase.from("contact_messages").insert({
-      name,
-      email,
-      subject,
-      message,
+    const { data, error } = await supabase.rpc("submit_contact_message", {
+      p_client_key: clientKey,
+      p_name: name,
+      p_email: email,
+      p_subject: subject,
+      p_message: message,
     });
 
     if (error) {
       console.error("Supabase insert error:", error);
       return jsonError("Mesaj kaydedilirken bir hata oluştu.", 500);
+    }
+
+    if (data === "rate_limited") {
+      return jsonError(
+        "Çok fazla mesaj gönderildi. Lütfen daha sonra tekrar deneyiniz.",
+        429
+      );
     }
 
     return NextResponse.json(

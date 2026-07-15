@@ -13,7 +13,11 @@ export const metadata: Metadata = {
 export default async function NewHeroSlidePage() {
   const supabase = await createClient();
   const [{ data: books }, settings] = await Promise.all([
-    supabase.from("books").select("id, title").order("title"),
+    supabase
+      .from("books")
+      .select("id, title")
+      .eq("is_published", true)
+      .order("title"),
     getSiteSettings(),
   ]);
 

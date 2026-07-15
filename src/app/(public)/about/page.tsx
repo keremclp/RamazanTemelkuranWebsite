@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { AboutContent } from "@/lib/types/database";
 import { getSiteSettings } from "@/lib/site-settings";
+import { createPageMetadata, metaDescription } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/site-url";
+import JsonLd from "@/components/public/JsonLd";
+import ResilientImage from "@/components/public/ResilientImage";
 
-export const metadata: Metadata = {
-  title: "Hakkında",
-  description: "Yazar Ramazan Temelkuran hakkında bilgiler, biyografi ve kariyer.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return createPageMetadata({
+    title: "Hakkında",
+    description: `${settings.site_title} hakkında biyografi ve kariyer bilgileri.`,
+    path: "/about",
+    type: "profile",
+  });
+}
 
 /* ---- Social media inline SVG icons ---- */
 function InstagramIcon({ className }: { className?: string }) {
@@ -51,6 +59,14 @@ export default async function AboutPage() {
   ]);
 
   const about = data as AboutContent | null;
+  const biography = metaDescription(
+    about?.biography ?? "",
+    settings.meta_description
+  );
+  const sameAs = socialPlatforms.flatMap((platform) => {
+    const url = about?.social_links?.[platform];
+    return url ? [url] : [];
+  });
   const socialEntries = socialPlatforms.flatMap((platform) => {
     const url = about?.social_links?.[platform];
     return url ? [{ platform, url }] : [];
@@ -58,6 +74,22 @@ export default async function AboutPage() {
 
   return (
     <section className="section-padding">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          url: absoluteUrl("/about"),
+          name: `${settings.site_title} Hakkında`,
+          mainEntity: {
+            "@type": "Person",
+            name: settings.site_title,
+            url: absoluteUrl("/about"),
+            description: biography,
+            image: about?.portrait_image_url || undefined,
+            sameAs: sameAs.length ? sameAs : undefined,
+          },
+        }}
+      />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in-up">
@@ -73,9 +105,10 @@ export default async function AboutPage() {
           <div className="lg:col-span-2">
             <div className="relative aspect-[3/4] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card-hover)]">
               {about?.portrait_image_url ? (
-                <Image
+                <ResilientImage
                   src={about.portrait_image_url}
                   alt={settings.site_title}
+                  fallback={<div className="absolute inset-0 bg-gradient-to-br from-accent/30 to-primary/20 flex items-center justify-center"><User className="w-24 h-24 text-accent/50" /></div>}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 40vw"

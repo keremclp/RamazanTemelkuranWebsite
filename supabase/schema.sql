@@ -21,6 +21,7 @@ CREATE TABLE books (
   page_count INTEGER,
   isbn TEXT,
   display_order INTEGER NOT NULL DEFAULT 0,
+  is_published BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -133,11 +134,20 @@ CREATE TABLE temporary_uploads (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Durable contact-form throttling shared by all server instances.
+CREATE TABLE contact_rate_limits (
+  client_key TEXT PRIMARY KEY,
+  request_count INTEGER NOT NULL DEFAULT 0 CHECK (request_count >= 0),
+  window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ============================================
 -- INDEXES
 -- ============================================
 CREATE INDEX idx_books_slug ON books(slug);
 CREATE INDEX idx_books_display_order ON books(display_order);
+CREATE INDEX idx_books_published_order ON books(is_published, display_order);
 CREATE INDEX idx_media_event_id ON media(event_id);
 CREATE INDEX idx_media_type ON media(type);
 CREATE INDEX idx_events_date ON events(event_date DESC);
@@ -186,6 +196,73 @@ $$;
 REVOKE ALL ON FUNCTION is_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
 
+CREATE OR REPLACE FUNCTION submit_contact_message(
+  p_client_key TEXT,
+  p_name TEXT,
+  p_email TEXT,
+  p_subject TEXT,
+  p_message TEXT
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  current_time TIMESTAMPTZ := NOW();
+  limit_row contact_rate_limits%ROWTYPE;
+BEGIN
+  IF p_client_key !~ '^[a-f0-9]{64}$' THEN
+    RAISE EXCEPTION 'Invalid client key';
+  END IF;
+
+  IF LENGTH(BTRIM(p_name)) NOT BETWEEN 1 AND 120
+    OR LENGTH(BTRIM(p_email)) NOT BETWEEN 3 AND 254
+    OR BTRIM(p_email) !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
+    OR LENGTH(BTRIM(p_subject)) NOT BETWEEN 1 AND 160
+    OR LENGTH(BTRIM(p_message)) NOT BETWEEN 10 AND 3000 THEN
+    RAISE EXCEPTION 'Invalid contact payload';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_client_key, 0));
+  DELETE FROM contact_rate_limits
+    WHERE updated_at < current_time - INTERVAL '24 hours';
+
+  SELECT * INTO limit_row
+  FROM contact_rate_limits
+  WHERE client_key = p_client_key
+  FOR UPDATE;
+
+  IF NOT FOUND OR limit_row.window_started_at <= current_time - INTERVAL '10 minutes' THEN
+    INSERT INTO contact_rate_limits (
+      client_key, request_count, window_started_at, updated_at
+    ) VALUES (
+      p_client_key, 1, current_time, current_time
+    )
+    ON CONFLICT (client_key) DO UPDATE SET
+      request_count = 1,
+      window_started_at = current_time,
+      updated_at = current_time;
+  ELSIF limit_row.request_count >= 5 THEN
+    RETURN 'rate_limited';
+  ELSE
+    UPDATE contact_rate_limits SET
+      request_count = request_count + 1,
+      updated_at = current_time
+    WHERE client_key = p_client_key;
+  END IF;
+
+  INSERT INTO contact_messages (name, email, subject, message)
+  VALUES (p_name, p_email, p_subject, p_message);
+
+  RETURN 'accepted';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION submit_contact_message(TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION submit_contact_message(TEXT, TEXT, TEXT, TEXT, TEXT)
+  TO service_role;
+
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================
@@ -200,10 +277,11 @@ ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE temporary_uploads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_rate_limits ENABLE ROW LEVEL SECURITY;
 
 -- PUBLIC READ policies (anyone can read public content)
 CREATE POLICY "Public can read books" ON books
-  FOR SELECT USING (true);
+  FOR SELECT USING (is_published = true);
 
 CREATE POLICY "Public can read events" ON events
   FOR SELECT USING (true);
@@ -219,10 +297,6 @@ CREATE POLICY "Public can read about content" ON about_content
 
 CREATE POLICY "Public can read site settings" ON site_settings
   FOR SELECT USING (true);
-
--- PUBLIC INSERT for contact messages (anyone can submit)
-CREATE POLICY "Anyone can submit contact messages" ON contact_messages
-  FOR INSERT WITH CHECK (true);
 
 -- ADMIN allowlist — only rows in admin_users receive full CRUD access.
 CREATE POLICY "Users can read own admin membership" ON admin_users

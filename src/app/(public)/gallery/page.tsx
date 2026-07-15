@@ -2,11 +2,17 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { EventWithMedia } from "@/lib/types/database";
 import GalleryFilter from "@/components/public/GalleryFilter";
+import { getSiteSettings } from "@/lib/site-settings";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Galeri",
-  description: "Ramazan Temelkuran'ın etkinlik fotoğrafları ve videoları.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return createPageMetadata({
+    title: "Galeri",
+    description: `${settings.site_title} etkinliklerinden fotoğraflar ve videolar.`,
+    path: "/gallery",
+  });
+}
 
 export default async function GalleryPage() {
   const supabase = await createClient();

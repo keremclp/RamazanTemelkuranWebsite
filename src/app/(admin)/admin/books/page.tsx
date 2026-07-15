@@ -114,6 +114,15 @@ export default async function AdminBooksPage({
                   <h2 className="truncate text-lg font-bold text-primary">
                     {book.title}
                   </h2>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      book.is_published
+                        ? "bg-success/10 text-success"
+                        : "bg-secondary text-muted"
+                    }`}
+                  >
+                    {book.is_published ? "Yayında" : "Taslak"}
+                  </span>
                 </div>
                 <p className="mt-1 text-sm text-muted">
                   {book.publisher || "Yayınevi belirtilmedi"}

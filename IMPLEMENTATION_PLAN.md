@@ -232,8 +232,11 @@ app/
 22. Site settings
 
 ### Phase 4 — Polish & Deploy
-23. SEO optimization
-24. Animations
-25. Responsive polish
-26. Performance optimization
-27. Deploy to Vercel
+Detailed preparation, implementation, launch, and Search Console workflow:
+[PHASE_4_IMPLEMENTATION_PLAN.md](PHASE_4_IMPLEMENTATION_PLAN.md)
+
+23. ✅ Technical SEO foundation implemented; production validation remains
+24. ✅ Animation and reduced-motion polish implemented
+25. ✅ Local responsive/accessibility polish; deployed device matrix remains
+26. ✅ Source-level performance optimization; deployed measurement remains
+27. ⬜ Deploy to Vercel, connect the domain, and complete Google launch steps

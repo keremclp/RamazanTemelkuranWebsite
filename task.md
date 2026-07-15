@@ -36,8 +36,13 @@
 - [x] In-place gallery photo replacement and video URL editing
 
 ## Phase 4 — Polish & Deploy
-- [ ] SEO: metadata, structured data, sitemap, robots.txt
-- [ ] Animations & micro-interactions
-- [ ] Responsive testing and polish
-- [ ] Performance optimization
-- [ ] Deploy to Vercel + connect Supabase
+Detailed execution plan: [PHASE_4_IMPLEMENTATION_PLAN.md](PHASE_4_IMPLEMENTATION_PLAN.md)
+
+- [x] Technical SEO foundation: metadata, canonicals, structured data, sitemap, robots
+- [x] Animation, micro-interaction, and reduced-motion polish
+- [x] Local responsive/accessibility smoke testing and polish
+- [ ] Full deployed device/browser/accessibility matrix
+- [x] Source-level performance optimization
+- [ ] Production performance measurement and Core Web Vitals validation
+- [ ] Apply Phase 4 migrations and configure production secrets
+- [ ] Deploy to Vercel, connect the domain, and complete Google launch steps

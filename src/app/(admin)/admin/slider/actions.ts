@@ -131,11 +131,11 @@ export async function createHeroSlideAction(
   if (parsed.data.cta_type === "book") {
     const { data: book } = await supabase
       .from("books")
-      .select("id")
+      .select("id, is_published")
       .eq("id", parsed.data.cta_book_id)
       .maybeSingle();
 
-    if (!book) return initialError("Seçilen kitap bulunamadı.");
+    if (!book?.is_published) return initialError("Seçilen kitap yayında değil.");
   }
 
   const { error } = await supabase.from("hero_slides").insert(parsed.data);
@@ -165,11 +165,11 @@ export async function updateHeroSlideAction(
   if (parsed.data.cta_type === "book") {
     const { data: book } = await supabase
       .from("books")
-      .select("id")
+      .select("id, is_published")
       .eq("id", parsed.data.cta_book_id)
       .maybeSingle();
 
-    if (!book) return initialError("Seçilen kitap bulunamadı.");
+    if (!book?.is_published) return initialError("Seçilen kitap yayında değil.");
   }
 
   const { data: existingSlide, error: fetchError } = await supabase

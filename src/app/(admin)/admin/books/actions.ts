@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase/storage";
 import { slugify } from "@/lib/utils/helpers";
 import { isHttpUrl } from "@/lib/validation";
+import { buildStableBookUpdate } from "@/lib/book-lifecycle";
 
 export interface BookFormState {
   message: string;
@@ -27,6 +28,7 @@ interface BookPayload {
   page_count: number | null;
   isbn: string | null;
   display_order: number;
+  is_published: boolean;
 }
 
 type ParsedBookForm =
@@ -100,6 +102,7 @@ function parseBookForm(formData: FormData): ParsedBookForm {
       page_count: pageCount,
       isbn: getString(formData, "isbn") || null,
       display_order: displayOrder,
+      is_published: getString(formData, "is_published") === "published",
     },
   };
 }
@@ -144,6 +147,7 @@ function revalidateBookPages(slug?: string) {
   revalidatePath("/books");
   revalidatePath("/admin");
   revalidatePath("/admin/books");
+  revalidatePath("/sitemap.xml");
   if (slug) revalidatePath(`/books/${slug}`);
 }
 
@@ -189,26 +193,24 @@ export async function updateBookAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
 
-  const { data: existingBook } = await supabase
+  const { data: existingBook, error: existingBookError } = await supabase
     .from("books")
     .select("slug, cover_image_url")
     .eq("id", id)
     .single();
 
-  const slug = await generateUniqueBookSlug(supabase, parsed.data.title, id);
-  if (!slug) return initialError("Kitap URL'si otomatik oluşturulamadı.");
+  if (existingBookError || !existingBook) {
+    return initialError("Kitap bulunamadı. Lütfen sayfayı yenileyin.");
+  }
 
   const { error } = await supabase
     .from("books")
-    .update({ ...parsed.data, slug })
+    .update(buildStableBookUpdate(existingBook.slug, parsed.data))
     .eq("id", id);
 
   if (error) {
     if (existingBook?.cover_image_url !== parsed.data.cover_image_url) {
       await discardTemporaryUpload(supabase, parsed.data.cover_image_url);
-    }
-    if (error.code === "23505") {
-      return initialError("Kitap URL'si otomatik oluşturulurken çakışma oluştu.");
     }
     console.error("Book update error:", error);
     return initialError("Kitap güncellenemedi. Lütfen tekrar deneyin.");
@@ -220,7 +222,6 @@ export async function updateBookAction(
   }
 
   revalidateBookPages(existingBook?.slug);
-  revalidateBookPages(slug);
   redirect("/admin/books?status=updated");
 }
 

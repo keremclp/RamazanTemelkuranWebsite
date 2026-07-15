@@ -21,7 +21,11 @@ export default async function EditHeroSlidePage({
   const supabase = await createClient();
   const [{ data }, { data: books }, settings] = await Promise.all([
     supabase.from("hero_slides").select("*").eq("id", id).single(),
-    supabase.from("books").select("id, title").order("title"),
+    supabase
+      .from("books")
+      .select("id, title")
+      .eq("is_published", true)
+      .order("title"),
     getSiteSettings(),
   ]);
 

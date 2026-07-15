@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import type { Metadata } from "next";
 import { BookOpen, ArrowRight, Camera, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -15,13 +15,27 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { formatDate, truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
 import { resolveHeroSlideCtaHref } from "@/lib/hero-slide-cta";
+import { createPageMetadata } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/site-url";
+import JsonLd from "@/components/public/JsonLd";
+import ResilientImage from "@/components/public/ResilientImage";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return createPageMetadata({
+    title: `${settings.site_title} | Yazar`,
+    description: settings.meta_description,
+    path: "/",
+    absoluteTitle: true,
+  });
+}
 
 type HomeEvent = Event & {
   media?: Media[];
 };
 
 type HomeHeroSlide = HeroSlide & {
-  cta_book?: { slug: string } | null;
+  cta_book?: { slug: string; is_published: boolean } | null;
 };
 
 function resolveHeroSlide(
@@ -40,12 +54,13 @@ async function getHomePageData() {
     const [slidesRes, booksRes, eventsRes, aboutRes, settings] = await Promise.all([
       supabase
         .from("hero_slides")
-        .select("*, cta_book:books!hero_slides_cta_book_id_fkey(slug)")
+        .select("*, cta_book:books!hero_slides_cta_book_id_fkey(slug, is_published)")
         .eq("is_active", true)
         .order("display_order"),
       supabase
         .from("books")
         .select("*")
+        .eq("is_published", true)
         .order("display_order")
         .limit(3),
       supabase
@@ -92,6 +107,21 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: settings.site_title,
+          url: absoluteUrl("/"),
+          description: settings.meta_description,
+          inLanguage: "tr-TR",
+          publisher: {
+            "@type": "Person",
+            name: settings.site_title,
+            url: absoluteUrl("/about"),
+          },
+        }}
+      />
       {/* ===== HERO SECTION ===== */}
       {heroSlides.length > 0 ? (
         <HeroSlider slides={heroSlides} />
@@ -177,9 +207,10 @@ export default async function HomePage() {
                 {/* Book Cover */}
                 <div className="aspect-[3/4] relative bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
                   {book.cover_image_url ? (
-                    <Image
+                    <ResilientImage
                       src={book.cover_image_url}
                       alt={book.title}
+                      fallback={<BookOpen size={48} className="text-accent/30" />}
                       fill
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -253,9 +284,10 @@ export default async function HomePage() {
                   aria-label={`${event.title} etkinliğini galeride görüntüle`}
                 >
                   {coverImageUrl ? (
-                    <Image
+                    <ResilientImage
                       src={coverImageUrl}
                       alt={event.title}
+                      fallback={<div className="absolute inset-0 flex items-center justify-center"><Camera size={32} className="text-accent/20" /></div>}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 1024px) 50vw, 25vw"
@@ -303,9 +335,10 @@ export default async function HomePage() {
             <div className="flex justify-center">
               <div className="relative w-72 h-72 sm:w-96 sm:h-96 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
                 {about.portrait_image_url ? (
-                  <Image
+                  <ResilientImage
                     src={about.portrait_image_url}
                     alt={settings.site_title}
+                    fallback={<User size={64} className="text-accent/20" />}
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 288px, 384px"

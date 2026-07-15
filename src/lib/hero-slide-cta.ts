@@ -57,7 +57,7 @@ export function resolveHeroSlideCtaHref(
     cta_type: HeroSlideCtaType;
     cta_link: string | null;
     cta_external_url: string | null;
-    cta_book?: { slug: string } | null;
+    cta_book?: { slug: string; is_published?: boolean } | null;
   },
   settings: Pick<SiteSettings, "shopier_main_url">
 ) {
@@ -65,7 +65,9 @@ export function resolveHeroSlideCtaHref(
     case "books":
       return "/books";
     case "book":
-      return slide.cta_book?.slug ? `/books/${slide.cta_book.slug}` : null;
+      return slide.cta_book?.slug && slide.cta_book.is_published !== false
+        ? `/books/${slide.cta_book.slug}`
+        : null;
     case "gallery":
       return "/gallery";
     case "about":

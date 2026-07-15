@@ -18,5 +18,15 @@ describe("resolveHeroSlideCtaHref", () => {
   it("returns null for unavailable targets", () => {
     expect(resolveHeroSlideCtaHref({ ...base, cta_type: "book" }, { shopier_main_url: "" })).toBeNull();
     expect(resolveHeroSlideCtaHref({ ...base, cta_type: "none" }, { shopier_main_url: "" })).toBeNull();
+    expect(
+      resolveHeroSlideCtaHref(
+        {
+          ...base,
+          cta_type: "book",
+          cta_book: { slug: "draft-book", is_published: false },
+        },
+        { shopier_main_url: "" }
+      )
+    ).toBeNull();
   });
 });

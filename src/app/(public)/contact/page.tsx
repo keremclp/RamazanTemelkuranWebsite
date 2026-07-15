@@ -3,11 +3,16 @@ import { Mail, MapPin } from "lucide-react";
 import ContactForm from "@/components/public/ContactForm";
 import { getSiteSettings } from "@/lib/site-settings";
 import type { SocialLinks } from "@/lib/types/database";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "İletişim",
-  description: "Ramazan Temelkuran ile iletişime geçin.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return createPageMetadata({
+    title: "İletişim",
+    description: `${settings.site_title} ile iletişime geçin.`,
+    path: "/contact",
+  });
+}
 
 function InstagramIcon({ className }: { className?: string }) {
   return (

@@ -127,6 +127,22 @@ export default function BookForm({ action, deleteCoverAction, book }: BookFormPr
                 />
               </Field>
 
+              <Field label="Yayın durumu" htmlFor="is_published">
+                <select
+                  id="is_published"
+                  name="is_published"
+                  defaultValue={!book || book.is_published === false ? "draft" : "published"}
+                  className={inputClassName}
+                  disabled={pending}
+                >
+                  <option value="published">Yayında</option>
+                  <option value="draft">Taslak</option>
+                </select>
+                <p className="mt-2 text-xs leading-relaxed text-muted">
+                  Taslak kitaplar genel sitede, arama motorlarında ve slider bağlantılarında gösterilmez.
+                </p>
+              </Field>
+
               <div className="sm:col-span-2">
                 <Field label="Shopier bağlantısı" htmlFor="shopier_url">
                   <input

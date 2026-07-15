@@ -3,17 +3,26 @@ import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types/database";
 import BookFilter from "@/components/public/BookFilter";
 import { getSiteSettings } from "@/lib/site-settings";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Kitaplar",
-  description: "Ramazan Temelkuran'ın tüm kitapları.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return createPageMetadata({
+    title: "Kitaplar",
+    description: `${settings.site_title} tarafından kaleme alınan kitapları inceleyin.`,
+    path: "/books",
+  });
+}
 
 export default async function BooksPage() {
   const supabase = await createClient();
 
   const [{ data: books }, settings] = await Promise.all([
-    supabase.from("books").select("*").order("display_order", { ascending: true }),
+    supabase
+      .from("books")
+      .select("*")
+      .eq("is_published", true)
+      .order("display_order", { ascending: true }),
     getSiteSettings(),
   ]);
 
