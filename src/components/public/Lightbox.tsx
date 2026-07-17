@@ -34,6 +34,7 @@ export default function Lightbox({
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") goNext();
@@ -60,7 +61,7 @@ export default function Lightbox({
     closeButtonRef.current?.focus();
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
@@ -74,7 +75,7 @@ export default function Lightbox({
       role="dialog"
       aria-modal="true"
       aria-label="Galeri görseli"
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-fade-in"
+      className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center animate-fade-in"
       onClick={onClose}
     >
       {/* Close Button */}

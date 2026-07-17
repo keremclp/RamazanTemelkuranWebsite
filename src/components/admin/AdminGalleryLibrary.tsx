@@ -310,9 +310,9 @@ function MediaCreateForm({
         </Field>
 
         {type === "photo" && (
-          <HomepageCheckbox disabled={pending}>
-            Bu fotoğrafı seçilen etkinliğin ana sayfa görseli yap
-          </HomepageCheckbox>
+          <EventCoverCheckbox disabled={pending}>
+            Bu fotoğrafı seçilen etkinliğin kapak görseli yap
+          </EventCoverCheckbox>
         )}
 
         <button
@@ -347,7 +347,7 @@ function GalleryMediaCard({
   );
   const thumbnailUrl =
     media.type === "video" ? getYouTubeThumbnail(media.url) : photoUrl;
-  const isHomepageMedia = media.event?.homepage_media_id === media.id;
+  const isEventCover = media.event?.homepage_media_id === media.id;
 
   function handleDelete() {
     const confirmed = window.confirm(
@@ -369,7 +369,7 @@ function GalleryMediaCard({
   return (
     <article
       className={`overflow-hidden rounded-2xl border bg-secondary/30 ${
-        isHomepageMedia ? "border-accent/50 ring-2 ring-accent/10" : "border-border/70"
+        isEventCover ? "border-accent/50 ring-2 ring-accent/10" : "border-border/70"
       }`}
     >
       <div className="relative aspect-video bg-primary/5">
@@ -406,10 +406,10 @@ function GalleryMediaCard({
           {media.type === "photo" ? "Fotoğraf" : "Video"}
         </span>
 
-        {isHomepageMedia && (
+        {isEventCover && (
           <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-white">
             <CheckCircle2 size={13} />
-            Ana sayfa
+            Etkinlik kapağı
           </span>
         )}
       </div>
@@ -588,12 +588,12 @@ function MediaEditForm({
       </Field>
 
       {media.type === "photo" && (
-        <HomepageCheckbox
+        <EventCoverCheckbox
           defaultChecked={media.event?.homepage_media_id === media.id}
           disabled={pending}
         >
-          Bu fotoğrafı bağlı olduğu etkinliğin ana sayfa görseli yap
-        </HomepageCheckbox>
+          Bu fotoğrafı bağlı olduğu etkinliğin kapak görseli yap
+        </EventCoverCheckbox>
       )}
 
       <button
@@ -639,7 +639,7 @@ function FormMessage({ state }: { state: MediaFormState }) {
   return null;
 }
 
-function HomepageCheckbox({
+function EventCoverCheckbox({
   children,
   defaultChecked,
   disabled,
@@ -652,7 +652,7 @@ function HomepageCheckbox({
     <label className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3 text-sm text-primary">
       <input
         type="checkbox"
-        name="use_on_homepage"
+        name="use_as_event_cover"
         defaultChecked={defaultChecked}
         className="mt-1 h-4 w-4 rounded border-border accent-[var(--color-accent)]"
         disabled={disabled}
@@ -660,7 +660,7 @@ function HomepageCheckbox({
       <span>
         <span className="font-medium">{children}</span>
         <span className="mt-0.5 block text-xs text-muted">
-          Her etkinlikte yalnızca bir fotoğraf ana sayfada gösterilir.
+          Her etkinlikte yalnızca bir fotoğraf kapak olarak seçilir. Seçim yoksa Galeri slaytı sıradaki uygun medyayı otomatik kullanır.
         </span>
       </span>
     </label>

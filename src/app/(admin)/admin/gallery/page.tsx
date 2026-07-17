@@ -55,7 +55,7 @@ export default async function AdminGalleryPage({
             Galeri
           </h1>
           <p className="mt-1 text-muted">
-            Fotoğraf ve videoları yükleyin, etkinliklere bağlayın ve ana sayfa görselini seçin.
+            Fotoğraf ve videoları yükleyin, etkinliklere bağlayın ve etkinlik kapak görselini seçin.
           </p>
         </div>
       </div>

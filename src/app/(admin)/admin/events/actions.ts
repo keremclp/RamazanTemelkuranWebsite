@@ -227,7 +227,8 @@ export async function createMediaAction(
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialMediaError("Bu işlem için yeniden giriş yapmalısınız.");
 
-  const shouldUseOnHomepage = getString(formData, "use_on_homepage") === "on";
+  const shouldUseAsEventCover =
+    getString(formData, "use_as_event_cover") === "on";
   const { data: media, error } = await supabase
     .from("media")
     .insert(parsed.data)
@@ -246,16 +247,16 @@ export async function createMediaAction(
     await commitTemporaryUpload(supabase, parsed.data.url);
   }
 
-  if (shouldUseOnHomepage && parsed.data.type === "photo" && media?.id) {
+  if (shouldUseAsEventCover && parsed.data.type === "photo" && media?.id) {
     const { error: eventError } = await supabase
       .from("events")
       .update({ homepage_media_id: media.id })
       .eq("id", eventId);
 
     if (eventError) {
-      console.error("Homepage media set after create error:", eventError);
+      console.error("Event cover set after create error:", eventError);
       return {
-        message: "Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.",
+        message: "Medya eklendi, ancak etkinlik kapak görseli olarak seçilemedi.",
         committedImageUrl: parsed.data.url,
       };
     }
@@ -265,8 +266,8 @@ export async function createMediaAction(
   return {
     message: "",
     success:
-      shouldUseOnHomepage && parsed.data.type === "photo"
-        ? "Medya eklendi ve ana sayfa görseli olarak seçildi."
+      shouldUseAsEventCover && parsed.data.type === "photo"
+        ? "Medya eklendi ve etkinlik kapak görseli olarak seçildi."
         : "Medya başarıyla eklendi.",
     committedImageUrl:
       parsed.data.type === "photo" ? parsed.data.url : undefined,
@@ -384,7 +385,8 @@ export async function createGalleryMediaAction(
 
   if (!event) return initialMediaError("Seçilen etkinlik bulunamadı.");
 
-  const shouldUseOnHomepage = getString(formData, "use_on_homepage") === "on";
+  const shouldUseAsEventCover =
+    getString(formData, "use_as_event_cover") === "on";
   const { data: media, error } = await supabase
     .from("media")
     .insert(parsed.data)
@@ -403,16 +405,16 @@ export async function createGalleryMediaAction(
     await commitTemporaryUpload(supabase, parsed.data.url);
   }
 
-  if (shouldUseOnHomepage && parsed.data.type === "photo" && media?.id) {
+  if (shouldUseAsEventCover && parsed.data.type === "photo" && media?.id) {
     const { error: eventError } = await supabase
       .from("events")
       .update({ homepage_media_id: media.id })
       .eq("id", eventId);
 
     if (eventError) {
-      console.error("Gallery homepage media set error:", eventError);
+      console.error("Gallery event cover set error:", eventError);
       return {
-        message: "Medya eklendi, ancak ana sayfa görseli olarak seçilemedi.",
+        message: "Medya eklendi, ancak etkinlik kapak görseli olarak seçilemedi.",
         committedImageUrl: parsed.data.url,
       };
     }
@@ -422,8 +424,8 @@ export async function createGalleryMediaAction(
   return {
     message: "",
     success:
-      shouldUseOnHomepage && parsed.data.type === "photo"
-        ? "Medya eklendi ve ana sayfa görseli olarak seçildi."
+      shouldUseAsEventCover && parsed.data.type === "photo"
+        ? "Medya eklendi ve etkinlik kapak görseli olarak seçildi."
         : "Medya başarıyla eklendi.",
     committedImageUrl:
       parsed.data.type === "photo" ? parsed.data.url : undefined,
@@ -439,7 +441,8 @@ export async function updateGalleryMediaAction(
   const url = getString(formData, "url");
   const caption = getString(formData, "caption") || null;
   const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
-  const shouldUseOnHomepage = getString(formData, "use_on_homepage") === "on";
+  const shouldUseAsEventCover =
+    getString(formData, "use_as_event_cover") === "on";
 
   if (!eventId) return initialMediaError("Etkinlik seçmelisiniz.");
   if (!url) return initialMediaError("Medya bağlantısı gereklidir.");
@@ -505,15 +508,17 @@ export async function updateGalleryMediaAction(
       .eq("homepage_media_id", mediaId);
   }
 
-  if (existingMedia.type === "photo" && shouldUseOnHomepage) {
+  if (existingMedia.type === "photo" && shouldUseAsEventCover) {
     const { error: eventError } = await supabase
       .from("events")
       .update({ homepage_media_id: mediaId })
       .eq("id", eventId);
 
     if (eventError) {
-      console.error("Gallery homepage media update error:", eventError);
-      return initialMediaError("Medya güncellendi, ancak ana sayfa görseli seçilemedi.");
+      console.error("Gallery event cover update error:", eventError);
+      return initialMediaError(
+        "Medya güncellendi, ancak etkinlik kapak görseli seçilemedi."
+      );
     }
   } else {
     await supabase
@@ -531,7 +536,7 @@ export async function updateGalleryMediaAction(
   };
 }
 
-export async function setEventHomepageMediaAction(
+export async function setEventCoverMediaAction(
   eventId: string,
   mediaId: string | null
 ): Promise<MediaFormState> {
@@ -551,7 +556,9 @@ export async function setEventHomepageMediaAction(
     }
 
     if (media.type !== "photo") {
-      return initialMediaError("Ana sayfa görseli olarak yalnızca fotoğraf seçebilirsiniz.");
+      return initialMediaError(
+        "Etkinlik kapak görseli olarak yalnızca fotoğraf seçebilirsiniz."
+      );
     }
   }
 
@@ -561,15 +568,17 @@ export async function setEventHomepageMediaAction(
     .eq("id", eventId);
 
   if (error) {
-    console.error("Homepage media update error:", error);
-    return initialMediaError("Ana sayfa görseli güncellenemedi. Lütfen tekrar deneyin.");
+    console.error("Event cover media update error:", error);
+    return initialMediaError(
+      "Etkinlik kapak görseli güncellenemedi. Lütfen tekrar deneyin."
+    );
   }
 
   revalidateEventPages(eventId);
   return {
     message: "",
     success: mediaId
-      ? "Ana sayfa görseli güncellendi."
-      : "Ana sayfa görseli kaldırıldı.",
+      ? "Etkinlik kapak görseli güncellendi."
+      : "Etkinlik kapak görseli kaldırıldı.",
   };
 }

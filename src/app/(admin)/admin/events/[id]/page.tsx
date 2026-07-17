@@ -36,7 +36,7 @@ export default async function EditEventPage({
   const updateAction = updateEventAction.bind(null, event.id);
   const photoCount = media.filter((item) => item.type === "photo").length;
   const videoCount = media.filter((item) => item.type === "video").length;
-  const homepageMedia = media.find((item) => item.id === event.homepage_media_id);
+  const coverMedia = media.find((item) => item.id === event.homepage_media_id);
 
   return (
     <div className="space-y-6">
@@ -62,7 +62,7 @@ export default async function EditEventPage({
           <div>
             <h2 className="text-lg font-bold text-primary">Galeri Medyası</h2>
             <p className="mt-1 text-sm text-muted">
-              Medya yükleme, etkinliğe bağlama ve ana sayfa görseli seçimi artık Galeri bölümünden yönetilir.
+              Medya yükleme, etkinliğe bağlama ve etkinlik kapak görseli seçimi Galeri bölümünden yönetilir.
             </p>
           </div>
           <Link
@@ -92,10 +92,10 @@ export default async function EditEventPage({
           <div className="rounded-xl bg-secondary/50 p-4">
             <div className="flex items-center gap-2 text-muted">
               <ImageIcon size={17} />
-              <span className="text-sm font-medium">Ana sayfa görseli</span>
+              <span className="text-sm font-medium">Etkinlik kapak görseli</span>
             </div>
             <p className="mt-2 line-clamp-1 text-sm font-medium text-primary">
-              {homepageMedia?.caption || (homepageMedia ? "Seçildi" : "Seçilmedi")}
+              {coverMedia?.caption || (coverMedia ? "Seçildi" : "Otomatik seçilecek")}
             </p>
           </div>
         </div>

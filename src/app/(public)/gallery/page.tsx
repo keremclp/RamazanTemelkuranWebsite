@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { EventWithMedia } from "@/lib/types/database";
-import GalleryFilter from "@/components/public/GalleryFilter";
+import EventGallerySlider from "@/components/public/EventGallerySlider";
 import { getSiteSettings } from "@/lib/site-settings";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -25,10 +25,9 @@ export default async function GalleryPage() {
     `)
     .order("event_date", { ascending: false });
 
-  // Sort media within each event by display_order
   const eventsWithMedia: EventWithMedia[] = (events || []).map((event) => ({
     ...event,
-    media: (event.media || []).sort(
+    media: [...(event.media || [])].sort(
       (a: { display_order: number }, b: { display_order: number }) =>
         a.display_order - b.display_order
     ),
@@ -37,7 +36,6 @@ export default async function GalleryPage() {
   return (
     <section className="section-padding">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center mb-12 animate-fade-in-up">
           <h1 className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-heading)] text-primary mb-4">
             Galeri
@@ -48,8 +46,7 @@ export default async function GalleryPage() {
           </p>
         </div>
 
-        {/* Filter + Media Grid (client component) */}
-        <GalleryFilter events={eventsWithMedia} />
+        <EventGallerySlider events={eventsWithMedia} />
       </div>
     </section>
   );
