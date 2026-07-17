@@ -62,8 +62,6 @@ ALTER TABLE events
 -- ============================================
 CREATE TABLE hero_slides (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  presentation_type TEXT NOT NULL DEFAULT 'image'
-    CHECK (presentation_type IN ('image', 'book')),
   image_url TEXT NOT NULL,
   title TEXT,
   subtitle TEXT,
@@ -71,8 +69,7 @@ CREATE TABLE hero_slides (
   -- Deprecated after CTA target migration; retained for backwards compatibility.
   cta_link TEXT,
   cta_type TEXT NOT NULL DEFAULT 'none'
-    CHECK (cta_type IN ('none', 'books', 'book', 'gallery', 'about', 'contact', 'shopier', 'external')),
-  cta_book_id UUID REFERENCES books(id) ON DELETE SET NULL,
+    CHECK (cta_type IN ('none', 'books', 'gallery', 'about', 'contact', 'shopier', 'external')),
   cta_external_url TEXT,
   display_order INTEGER NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT true,
@@ -154,7 +151,6 @@ CREATE INDEX idx_media_event_id ON media(event_id);
 CREATE INDEX idx_media_type ON media(type);
 CREATE INDEX idx_events_date ON events(event_date DESC);
 CREATE INDEX idx_hero_slides_active ON hero_slides(is_active, display_order);
-CREATE INDEX idx_hero_slides_cta_book ON hero_slides(cta_book_id);
 CREATE INDEX idx_contact_messages_read ON contact_messages(is_read, created_at DESC);
 CREATE INDEX idx_temporary_uploads_created_at ON temporary_uploads(created_at);
 

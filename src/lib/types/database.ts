@@ -43,27 +43,14 @@ export interface Media {
 export type HeroSlideCtaType =
   | "none"
   | "books"
-  | "book"
   | "gallery"
   | "about"
   | "contact"
   | "shopier"
   | "external";
 
-export type HeroSlidePresentationType = "image" | "book";
-
-export interface HeroSlideBook {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  cover_image_url: string | null;
-  is_published: boolean;
-}
-
 export interface HeroSlide {
   id: string;
-  presentation_type: HeroSlidePresentationType;
   image_url: string;
   title: string | null;
   subtitle: string | null;
@@ -71,7 +58,6 @@ export interface HeroSlide {
   /** @deprecated Kept temporarily while existing rows are migrated. */
   cta_link: string | null;
   cta_type: HeroSlideCtaType;
-  cta_book_id: string | null;
   cta_external_url: string | null;
   display_order: number;
   is_active: boolean;
@@ -80,7 +66,6 @@ export interface HeroSlide {
 
 export interface ResolvedHeroSlide extends HeroSlide {
   cta_href: string | null;
-  cta_book?: HeroSlideBook | null;
 }
 
 export interface AboutContent {

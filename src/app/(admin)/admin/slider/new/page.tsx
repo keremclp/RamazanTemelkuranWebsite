@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import HeroSlideForm from "@/components/admin/HeroSlideForm";
-import { createClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/site-settings";
 import { createHeroSlideAction } from "../actions";
 
@@ -11,15 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewHeroSlidePage() {
-  const supabase = await createClient();
-  const [{ data: books }, settings] = await Promise.all([
-    supabase
-      .from("books")
-      .select("id, title, cover_image_url")
-      .eq("is_published", true)
-      .order("title"),
-    getSiteSettings(),
-  ]);
+  const settings = await getSiteSettings();
 
   return (
     <div className="space-y-6">
@@ -41,7 +32,6 @@ export default async function NewHeroSlidePage() {
 
       <HeroSlideForm
         action={createHeroSlideAction}
-        books={books ?? []}
         hasShopierUrl={Boolean(settings.shopier_main_url)}
       />
     </div>

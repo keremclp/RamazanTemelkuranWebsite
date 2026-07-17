@@ -1,22 +1,23 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { BookOpen, ArrowRight, Camera, User } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  Mail,
+  User,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AboutContent,
-  Book,
-  Event,
   HeroSlide,
-  HeroSlideBook,
-  Media,
   ResolvedHeroSlide,
   SiteSettings,
 } from "@/lib/types/database";
 import { getSiteSettings } from "@/lib/site-settings";
-import { formatDate, truncate } from "@/lib/utils/helpers";
+import { truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
 import { resolveHeroSlideCtaHref } from "@/lib/hero-slide-cta";
-import { canShowBookPresentation } from "@/lib/hero-slide-presentation";
 import { createPageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/public/JsonLd";
@@ -32,86 +33,46 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-type HomeEvent = Event & {
-  media?: Media[];
-};
-
-type HomeHeroSlide = HeroSlide & {
-  cta_book?: HeroSlideBook | null;
-};
-
 function resolveHeroSlide(
-  slide: HomeHeroSlide,
+  slide: HeroSlide,
   settings: SiteSettings
 ): ResolvedHeroSlide {
   return { ...slide, cta_href: resolveHeroSlideCtaHref(slide, settings) };
 }
 
-/* ---------- Data fetching ---------- */
-
 async function getHomePageData() {
   try {
     const supabase = await createClient();
 
-    const [slidesRes, booksRes, eventsRes, aboutRes, settings] = await Promise.all([
+    const [slidesRes, aboutRes, settings] = await Promise.all([
       supabase
         .from("hero_slides")
-        .select(
-          "*, cta_book:books!hero_slides_cta_book_id_fkey(id, title, slug, description, cover_image_url, is_published)"
-        )
+        .select("*")
         .eq("is_active", true)
         .order("display_order"),
-      supabase
-        .from("books")
-        .select("*")
-        .eq("is_published", true)
-        .order("display_order")
-        .limit(3),
-      supabase
-        .from("events")
-        .select(`
-          *,
-          media:media!media_event_id_fkey (*)
-        `)
-        .order("event_date", { ascending: false })
-        .limit(4),
-      supabase
-        .from("about_content")
-        .select("*")
-        .single(),
+      supabase.from("about_content").select("*").single(),
       getSiteSettings(),
     ]);
 
-    const slideRows = (slidesRes.data as HomeHeroSlide[] | null) ?? [];
+    const slideRows = (slidesRes.data as HeroSlide[] | null) ?? [];
 
     return {
-      heroSlides: slideRows
-        .filter((slide) =>
-          canShowBookPresentation(slide.presentation_type, slide.cta_book)
-        )
-        .map((slide) => resolveHeroSlide(slide, settings)),
-      featuredBooks: (booksRes.data as Book[] | null) ?? [],
-      recentEvents: (eventsRes.data as HomeEvent[] | null) ?? [],
+      heroSlides: slideRows.map((slide) => resolveHeroSlide(slide, settings)),
       about: (aboutRes.data as AboutContent | null) ?? null,
       settings,
     };
   } catch {
-    // If Supabase is unavailable, keep the preview clean and avoid demo data.
     const settings = await getSiteSettings();
     return {
       heroSlides: [],
-      featuredBooks: [],
-      recentEvents: [],
       about: null,
       settings,
     };
   }
 }
 
-/* ---------- Page component ---------- */
-
 export default async function HomePage() {
-  const { heroSlides, featuredBooks, recentEvents, about, settings } = await getHomePageData();
+  const { heroSlides, about, settings } = await getHomePageData();
 
   return (
     <>
@@ -130,58 +91,57 @@ export default async function HomePage() {
           },
         }}
       />
-      {/* ===== HERO SECTION ===== */}
+
       {heroSlides.length > 0 ? (
         <HeroSlider slides={heroSlides} />
       ) : (
-        /* Neutral fallback if no slides are configured yet */
-        <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-primary">
-          <div className="absolute inset-0 opacity-5">
+        <section className="relative flex min-h-[85vh] items-center overflow-hidden bg-primary">
+          <div className="absolute inset-0 opacity-5" aria-hidden="true">
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: `radial-gradient(circle at 25% 25%, rgba(197, 165, 90, 0.3) 0%, transparent 50%),
-                                 radial-gradient(circle at 75% 75%, rgba(197, 165, 90, 0.2) 0%, transparent 50%)`,
+                backgroundImage:
+                  "radial-gradient(circle at 25% 25%, rgba(197, 165, 90, 0.3) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(197, 165, 90, 0.2) 0%, transparent 50%)",
               }}
             />
           </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-12 lg:grid-cols-2">
               <div className="space-y-8 animate-fade-in-up">
                 <div className="space-y-4">
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                  <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
                     {settings.site_title}
                   </h1>
-                  <p className="text-lg text-white/60 max-w-lg leading-relaxed">
+                  <p className="max-w-lg text-lg leading-relaxed text-white/60">
                     {settings.meta_description}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline group"
+                    className="group inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-white no-underline transition-all duration-200 hover:bg-accent-dark"
                   >
                     <User size={18} />
                     İletişime Geç
                     <ArrowRight
                       size={16}
-                      className="group-hover:translate-x-1 transition-transform"
+                      className="transition-transform group-hover:translate-x-1"
                     />
                   </Link>
                   <Link
                     href="/books"
-                    className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-lg hover:bg-white/10 transition-all duration-200 no-underline"
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3 font-medium text-white no-underline transition-all duration-200 hover:bg-white/10"
                   >
                     <BookOpen size={18} />
                     Kitaplar
                   </Link>
                 </div>
               </div>
-              <div className="hidden lg:flex justify-center items-center">
-                <div className="relative w-80 h-80">
+              <div className="hidden items-center justify-center lg:flex">
+                <div className="relative h-80 w-80" aria-hidden="true">
                   <div className="absolute inset-0 rounded-full border-2 border-accent/20 animate-pulse" />
                   <div className="absolute inset-4 rounded-full border border-accent/10" />
-                  <div className="absolute inset-8 rounded-full bg-accent/5 flex items-center justify-center">
+                  <div className="absolute inset-8 flex items-center justify-center rounded-full bg-accent/5">
                     <BookOpen size={64} className="text-accent/40" />
                   </div>
                 </div>
@@ -191,234 +151,103 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== FEATURED BOOKS SECTION ===== */}
-      {featuredBooks.length > 0 && (
-      <section className="section-padding bg-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <p className="text-accent font-medium tracking-widest uppercase text-sm mb-3">
-              Kütüphane
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold">Öne Çıkan Kitaplar</h2>
-            <p className="mt-4 text-muted max-w-2xl mx-auto">
-              En çok okunan ve beğenilen kitaplardan bir seçki.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredBooks.map((book) => (
-              <Link
-                key={book.id}
-                href={`/books/${book.slug}`}
-                className="group bg-surface rounded-xl overflow-hidden shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-300 hover:-translate-y-1 no-underline"
-              >
-                {/* Book Cover */}
-                <div className="aspect-[3/4] relative bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                  {book.cover_image_url ? (
+      {about && (about.biography || about.portrait_image_url) && (
+        <section className="section-padding bg-secondary">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-12 lg:grid-cols-2">
+              <div className="flex justify-center">
+                <div className="relative flex h-72 w-72 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 sm:h-96 sm:w-96">
+                  {about.portrait_image_url ? (
                     <ResilientImage
-                      src={book.cover_image_url}
-                      alt={book.title}
-                      fallback={<BookOpen size={48} className="text-accent/30" />}
+                      src={about.portrait_image_url}
+                      alt={settings.site_title}
+                      fallback={<User size={64} className="text-accent/20" />}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      sizes="(max-width: 640px) 288px, 384px"
                     />
                   ) : (
-                    <BookOpen size={48} className="text-accent/30" />
+                    <User size={64} className="text-accent/20" />
                   )}
+                  <div className="absolute -inset-2 -z-10 rounded-2xl border-2 border-accent/20" />
                 </div>
-                <div className="p-6 space-y-3">
-                  <h3 className="text-lg font-bold group-hover:text-accent transition-colors text-primary">
-                    {book.title}
-                  </h3>
-                  {book.description && (
-                    <p className="text-sm text-muted line-clamp-2">
-                      {book.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 pt-2">
-                    <span className="text-sm font-medium text-accent group-hover:text-accent-dark transition-colors">
-                      Detaylar →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link
-              href="/books"
-              className="inline-flex items-center gap-2 text-accent font-medium hover:text-accent-dark transition-colors no-underline group"
-            >
-              Tüm Kitapları Gör
-              <ArrowRight
-                size={16}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </Link>
-          </div>
-        </div>
-      </section>
-      )}
-
-      {/* ===== LATEST EVENTS SECTION ===== */}
-      {recentEvents.length > 0 && (
-      <section className="section-padding bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <p className="text-accent font-medium tracking-widest uppercase text-sm mb-3">
-              Etkinlikler
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold">Son Etkinlikler</h2>
-            <p className="mt-4 text-muted max-w-2xl mx-auto">
-              İmza günleri, söyleşiler ve özel etkinliklerden kareler.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {recentEvents.map((event) => {
-              const coverMedia = (event.media ?? []).find(
-                (item) =>
-                  item.id === event.homepage_media_id && item.type === "photo"
-              );
-              const coverImageUrl = coverMedia?.url ?? null;
-
-              return (
-                <Link
-                  key={event.id}
-                  href="/gallery"
-                  className="group relative aspect-square overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 no-underline"
-                  aria-label={`${event.title} etkinliğini galeride görüntüle`}
-                >
-                  {coverImageUrl ? (
-                    <ResilientImage
-                      src={coverImageUrl}
-                      alt={event.title}
-                      fallback={<div className="absolute inset-0 flex items-center justify-center"><Camera size={32} className="text-accent/20" /></div>}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width: 1024px) 50vw, 25vw"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Camera size={32} className="text-accent/20" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/85 via-primary/10 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-90" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <p className="text-sm font-medium">{event.title}</p>
-                    <p className="text-xs text-white/70">
-                      {formatDate(event.event_date)}
-                      {event.location && ` · ${event.location}`}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link
-              href="/gallery"
-              className="inline-flex items-center gap-2 text-accent font-medium hover:text-accent-dark transition-colors no-underline group"
-            >
-              Tüm Galeriyi Gör
-              <ArrowRight
-                size={16}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </Link>
-          </div>
-        </div>
-      </section>
-      )}
-
-      {/* ===== AUTHOR SPOTLIGHT ===== */}
-      {about && (about.biography || about.portrait_image_url) && (
-      <section className="section-padding bg-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Portrait */}
-            <div className="flex justify-center">
-              <div className="relative w-72 h-72 sm:w-96 sm:h-96 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                {about.portrait_image_url ? (
-                  <ResilientImage
-                    src={about.portrait_image_url}
-                    alt={settings.site_title}
-                    fallback={<User size={64} className="text-accent/20" />}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 288px, 384px"
-                  />
-                ) : (
-                  <User size={64} className="text-accent/20" />
-                )}
-                {/* Decorative border */}
-                <div className="absolute -inset-2 rounded-2xl border-2 border-accent/20 -z-10" />
               </div>
-            </div>
 
-            {/* Bio */}
-            <div className="space-y-6">
-              <div>
-                <p className="text-accent font-medium tracking-widest uppercase text-sm mb-3">
-                  Yazar Hakkında
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-3 text-sm font-medium uppercase tracking-widest text-accent">
+                    Yazar Hakkında
+                  </p>
+                  <h2 className="text-3xl font-bold sm:text-4xl">
+                    {settings.site_title}
+                  </h2>
+                </div>
+                <p className="leading-relaxed text-muted">
+                  {about.biography ? truncate(about.biography, 200) : ""}
                 </p>
-                <h2 className="text-3xl sm:text-4xl font-bold">
-                  {settings.site_title}
-                </h2>
+                <Link
+                  href="/about"
+                  className="group inline-flex items-center gap-2 font-medium text-accent no-underline transition-colors hover:text-accent-dark"
+                >
+                  Devamını Oku
+                  <ArrowRight
+                    size={16}
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </Link>
               </div>
-              <p className="text-muted leading-relaxed">
-                {about.biography ? truncate(about.biography, 200) : ""}
-              </p>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-2 text-accent font-medium hover:text-accent-dark transition-colors no-underline group"
-              >
-                Devamını Oku
-                <ArrowRight
-                  size={16}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
-      {/* ===== CTA BANNER ===== */}
-      {settings.shopier_main_url && (
-      <section className="relative py-20 bg-primary overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `radial-gradient(circle at 50% 50%, rgba(197, 165, 90, 0.4) 0%, transparent 60%)`,
-            }}
-          />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            Kitapları <span className="text-accent">Keşfedin</span>
-          </h2>
-          <p className="text-white/60 max-w-xl mx-auto">
-            Tüm kitaplarıma Shopier üzerinden kolayca ulaşabilir ve sipariş
-            verebilirsiniz.
+      <HomeClosingSection settings={settings} />
+    </>
+  );
+}
+
+function HomeClosingSection({ settings }: { settings: SiteSettings }) {
+  const socialLinks = [
+    { label: "Instagram", url: settings.social_links.instagram },
+    { label: "YouTube", url: settings.social_links.youtube },
+  ].filter((entry): entry is { label: string; url: string } =>
+    Boolean(entry.url && entry.url !== "#")
+  );
+
+  return (
+    <section className="border-t border-border/60 bg-surface py-14 sm:py-16">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 text-center sm:px-6 lg:px-8">
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-widest text-accent">
+            Bağlantıda Kalın
           </p>
+          <h2 className="text-2xl font-bold text-primary sm:text-3xl">
+            Yeni çalışmalar ve etkinlikler için takipte kalın
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {socialLinks.map((entry) => (
+            <a
+              key={entry.label}
+              href={entry.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-5 py-2.5 text-sm font-medium text-primary no-underline transition hover:border-accent/40 hover:text-accent-dark"
+            >
+              {entry.label}
+              <ArrowUpRight size={15} />
+            </a>
+          ))}
           <Link
-            href={settings.shopier_main_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-all duration-200 no-underline text-lg"
+            href="/contact"
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-accent-dark"
           >
-            <BookOpen size={20} />
-            Shopier&apos;den Satın Al
+            <Mail size={15} />
+            İletişime Geç
           </Link>
         </div>
-      </section>
-      )}
-    </>
+      </div>
+    </section>
   );
 }

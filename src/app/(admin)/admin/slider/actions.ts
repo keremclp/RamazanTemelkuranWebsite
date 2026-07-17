@@ -12,11 +12,7 @@ import {
   HERO_SLIDE_CTA_DEFAULT_TEXT,
   isHeroSlideCtaType,
 } from "@/lib/hero-slide-cta";
-import { isHeroSlidePresentationType } from "@/lib/hero-slide-presentation";
-import type {
-  HeroSlideCtaType,
-  HeroSlidePresentationType,
-} from "@/lib/types/database";
+import type { HeroSlideCtaType } from "@/lib/types/database";
 
 export interface HeroSlideFormState {
   message: string;
@@ -24,14 +20,12 @@ export interface HeroSlideFormState {
 }
 
 interface HeroSlidePayload {
-  presentation_type: HeroSlidePresentationType;
   image_url: string;
   title: string | null;
   subtitle: string | null;
   cta_text: string | null;
   cta_link: string | null;
   cta_type: HeroSlideCtaType;
-  cta_book_id: string | null;
   cta_external_url: string | null;
   display_order: number;
   is_active: boolean;
@@ -70,46 +64,12 @@ async function getAuthenticatedClient() {
 }
 
 function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
-  const rawPresentationType = getString(formData, "presentation_type");
   const imageUrl = getString(formData, "image_url");
   const title = getString(formData, "title");
   const subtitle = getString(formData, "subtitle");
   const rawCtaType = getString(formData, "cta_type");
-  const ctaBookId = getString(formData, "cta_book_id");
   const ctaExternalUrl = getString(formData, "cta_external_url");
   const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
-
-  if (!isHeroSlidePresentationType(rawPresentationType)) {
-    return { error: "Geçerli bir slayt görünümü seçin." };
-  }
-
-  const presentationType = rawPresentationType;
-
-  if (presentationType === "book") {
-    if (!ctaBookId) {
-      return { error: "Tanıtılacak kitabı seçin." };
-    }
-
-    if (Number.isNaN(displayOrder) || displayOrder < 0) {
-      return { error: "Görüntülenme sırası sıfır veya daha büyük olmalıdır." };
-    }
-
-    return {
-      data: {
-        presentation_type: "book",
-        image_url: "",
-        title: null,
-        subtitle: null,
-        cta_text: HERO_SLIDE_CTA_DEFAULT_TEXT.book,
-        cta_link: null,
-        cta_type: "book",
-        cta_book_id: ctaBookId,
-        cta_external_url: null,
-        display_order: displayOrder,
-        is_active: getString(formData, "is_active") === "on",
-      },
-    };
-  }
 
   if (!isHeroSlideCtaType(rawCtaType)) {
     return { error: "Geçerli bir buton hedefi seçin." };
@@ -130,24 +90,18 @@ function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
     return { error: "Tanıtım slaytı için bir görsel yükleyin." };
   }
 
-  if (ctaType === "book" && !ctaBookId) {
-    return { error: "Butonun açacağı kitabı seçin." };
-  }
-
   if (ctaType === "external" && !isValidExternalUrl(ctaExternalUrl)) {
     return { error: "Geçerli bir harici web sitesi adresi girin." };
   }
 
   return {
     data: {
-      presentation_type: "image",
       image_url: imageUrl,
       title: title || null,
       subtitle: subtitle || null,
       cta_text: ctaText,
       cta_link: null,
       cta_type: ctaType,
-      cta_book_id: ctaType === "book" ? ctaBookId : null,
       cta_external_url: ctaType === "external" ? ctaExternalUrl : null,
       display_order: displayOrder,
       is_active: getString(formData, "is_active") === "on",
@@ -170,16 +124,6 @@ export async function createHeroSlideAction(
 
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
-
-  if (parsed.data.cta_type === "book") {
-    const { data: book } = await supabase
-      .from("books")
-      .select("id, is_published")
-      .eq("id", parsed.data.cta_book_id)
-      .maybeSingle();
-
-    if (!book?.is_published) return initialError("Seçilen kitap yayında değil.");
-  }
 
   const { error } = await supabase.from("hero_slides").insert(parsed.data);
 
@@ -204,16 +148,6 @@ export async function updateHeroSlideAction(
 
   const { supabase, user } = await getAuthenticatedClient();
   if (!user) return initialError("Bu işlem için yeniden giriş yapmalısınız.");
-
-  if (parsed.data.cta_type === "book") {
-    const { data: book } = await supabase
-      .from("books")
-      .select("id, is_published")
-      .eq("id", parsed.data.cta_book_id)
-      .maybeSingle();
-
-    if (!book?.is_published) return initialError("Seçilen kitap yayında değil.");
-  }
 
   const { data: existingSlide, error: fetchError } = await supabase
     .from("hero_slides")

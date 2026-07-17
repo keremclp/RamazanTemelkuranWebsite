@@ -2,37 +2,16 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import {
-  AlertCircle,
-  BookOpen,
-  ExternalLink,
-  ImageIcon,
-  Save,
-} from "lucide-react";
+import { AlertCircle, ExternalLink, ImageIcon, Save } from "lucide-react";
 import ImageUploader from "@/components/admin/ImageUploader";
-import ResilientImage from "@/components/public/ResilientImage";
 import {
   HERO_SLIDE_CTA_DEFAULT_TEXT,
   HERO_SLIDE_CTA_LABELS,
   HERO_SLIDE_CTA_TYPES,
-  inferLegacyCtaType,
+  normalizeHeroSlideCtaType,
 } from "@/lib/hero-slide-cta";
-import {
-  HERO_SLIDE_PRESENTATION_LABELS,
-  HERO_SLIDE_PRESENTATION_TYPES,
-} from "@/lib/hero-slide-presentation";
-import type {
-  HeroSlide,
-  HeroSlideCtaType,
-  HeroSlidePresentationType,
-} from "@/lib/types/database";
+import type { HeroSlide, HeroSlideCtaType } from "@/lib/types/database";
 import type { HeroSlideFormState } from "@/app/(admin)/admin/slider/actions";
-
-interface BookOption {
-  id: string;
-  title: string;
-  cover_image_url: string | null;
-}
 
 interface HeroSlideFormProps {
   action: (
@@ -41,7 +20,6 @@ interface HeroSlideFormProps {
   ) => Promise<HeroSlideFormState>;
   deleteImageAction?: (imageUrl: string) => Promise<HeroSlideFormState>;
   slide?: HeroSlide;
-  books: BookOption[];
   hasShopierUrl: boolean;
 }
 
@@ -54,24 +32,18 @@ export default function HeroSlideForm({
   action,
   deleteImageAction,
   slide,
-  books,
   hasShopierUrl,
 }: HeroSlideFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [imageUrl, setImageUrl] = useState(slide?.image_url ?? "");
-  const initialPresentationType = slide?.presentation_type ?? "image";
-  const [presentationType, setPresentationType] =
-    useState<HeroSlidePresentationType>(initialPresentationType);
-  const initialCtaType =
-    slide?.cta_type ?? inferLegacyCtaType(slide?.cta_link ?? null);
+  const initialCtaType = normalizeHeroSlideCtaType(
+    slide?.cta_type,
+    slide?.cta_link ?? null
+  );
   const [ctaType, setCtaType] = useState<HeroSlideCtaType>(initialCtaType);
   const [ctaText, setCtaText] = useState(
     slide?.cta_text ?? HERO_SLIDE_CTA_DEFAULT_TEXT[initialCtaType]
   );
-  const [selectedBookId, setSelectedBookId] = useState(
-    slide?.cta_book_id ?? ""
-  );
-  const selectedBook = books.find((book) => book.id === selectedBookId);
 
   function handleCtaTypeChange(nextType: HeroSlideCtaType) {
     const previousDefault = HERO_SLIDE_CTA_DEFAULT_TEXT[ctaType];
@@ -94,232 +66,128 @@ export default function HeroSlideForm({
         </div>
       )}
 
-      <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
-        <h2 className="text-lg font-bold text-primary">Slayt görünümü</h2>
-        <p className="mt-1 text-sm text-muted">
-          İçeriğin ana sayfada nasıl sunulacağını seçin. Her iki seçenek de aynı
-          otomatik kayan vitrinde gösterilir.
-        </p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {HERO_SLIDE_PRESENTATION_TYPES.map((type) => {
-            const isBook = type === "book";
-            const Icon = isBook ? BookOpen : ImageIcon;
-            return (
-              <label
-                key={type}
-                className={`flex cursor-pointer items-start gap-4 rounded-xl border p-4 transition ${
-                  presentationType === type
-                    ? "border-accent bg-accent/5 ring-2 ring-accent/10"
-                    : "border-border hover:border-accent/40"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="presentation_type"
-                  value={type}
-                  checked={presentationType === type}
-                  onChange={() => setPresentationType(type)}
-                  className="sr-only"
-                  disabled={pending}
-                />
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent-dark">
-                  <Icon size={20} />
-                </span>
-                <span>
-                  <span className="block font-semibold text-primary">
-                    {HERO_SLIDE_PRESENTATION_LABELS[type]}
-                  </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-muted">
-                    {isBook
-                      ? "Yayındaki bir kitabın kapağını, adını ve açıklamasını otomatik kullanır."
-                      : "Etkinlik, duyuru veya başka bir içerik için yüklediğiniz yatay görseli kullanır."}
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
+      <section className="rounded-2xl border border-accent/15 bg-accent/5 p-4 text-sm leading-relaxed text-primary/75">
+        Slider yalnızca ana sayfadaki genel tanıtımları yönetir. Kitaplar ve
+        etkinlikler kendi sayfalarında otomatik olarak gösterilir.
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
           <h2 className="mb-5 text-lg font-bold text-primary">
-            {presentationType === "book"
-              ? "Kitap seçimi"
-              : "Tanıtım bilgileri"}
+            Tanıtım bilgileri
           </h2>
 
-          {presentationType === "book" ? (
-            <div className="space-y-5">
-              <Field label="Tanıtılacak kitap" htmlFor="cta_book_id">
-                <select
-                  id="cta_book_id"
-                  name="cta_book_id"
-                  value={selectedBookId}
-                  onChange={(event) => setSelectedBookId(event.target.value)}
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Field label="Başlık" htmlFor="title">
+                <input
+                  id="title"
+                  name="title"
+                  defaultValue={slide?.title ?? ""}
                   className={inputClassName}
-                  required
-                  disabled={pending || books.length === 0}
-                >
-                  <option value="">Kitap seçin</option>
-                  {books.map((book) => (
-                    <option key={book.id} value={book.id}>
-                      {book.title}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Kitaplarımız, etkinlikler veya duyuru başlığı"
+                  disabled={pending}
+                />
               </Field>
-              {books.length === 0 ? (
-                <p className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-sm text-danger">
-                  Kitap tanıtımı oluşturmak için önce en az bir kitabı yayına alın.
-                </p>
-              ) : (
-                <p className="rounded-xl border border-accent/20 bg-accent/5 p-4 text-sm leading-relaxed text-primary/75">
-                  Kitabın kapağı, adı ve açıklaması Supabase&apos;den canlı olarak
-                  alınır. Kitap daha sonra düzenlenirse bu slayt da otomatik
-                  güncellenir.
-                </p>
-              )}
             </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <Field label="Başlık" htmlFor="title">
-                  <input
-                    id="title"
-                    name="title"
-                    defaultValue={slide?.title ?? ""}
+
+            <div className="sm:col-span-2">
+              <Field label="Alt başlık" htmlFor="subtitle">
+                <textarea
+                  id="subtitle"
+                  name="subtitle"
+                  defaultValue={slide?.subtitle ?? ""}
+                  className={`${inputClassName} min-h-32 resize-y`}
+                  placeholder="Kısa açıklama metni"
+                  disabled={pending}
+                />
+              </Field>
+            </div>
+
+            <div className="sm:col-span-2 rounded-xl border border-border bg-secondary/20 p-4">
+              <h3 className="text-sm font-semibold text-primary">
+                Buton ayarları
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted">
+                Butonun açacağı bölümü seçin; site bağlantıyı otomatik oluştursun.
+              </p>
+
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Field label="Buton hedefi" htmlFor="cta_type">
+                  <select
+                    id="cta_type"
+                    name="cta_type"
+                    value={ctaType}
+                    onChange={(event) =>
+                      handleCtaTypeChange(
+                        event.target.value as HeroSlideCtaType
+                      )
+                    }
                     className={inputClassName}
-                    placeholder="Yeni kitap, etkinlik veya duyuru başlığı"
                     disabled={pending}
-                  />
+                  >
+                    {HERO_SLIDE_CTA_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {HERO_SLIDE_CTA_LABELS[type]}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
-              </div>
 
-              <div className="sm:col-span-2">
-                <Field label="Alt başlık" htmlFor="subtitle">
-                  <textarea
-                    id="subtitle"
-                    name="subtitle"
-                    defaultValue={slide?.subtitle ?? ""}
-                    className={`${inputClassName} min-h-32 resize-y`}
-                    placeholder="Kısa açıklama metni"
-                    disabled={pending}
-                  />
-                </Field>
-              </div>
-
-              <div className="sm:col-span-2 rounded-xl border border-border bg-secondary/20 p-4">
-                <h3 className="text-sm font-semibold text-primary">
-                  Buton ayarları
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted">
-                  Teknik bağlantı yazmanız gerekmez. Butonun açacağı yeri seçin;
-                  bağlantıyı site otomatik oluştursun.
-                </p>
-
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <Field label="Buton hedefi" htmlFor="cta_type">
-                    <select
-                      id="cta_type"
-                      name="cta_type"
-                      value={ctaType}
-                      onChange={(event) =>
-                        handleCtaTypeChange(
-                          event.target.value as HeroSlideCtaType
-                        )
-                      }
+                {ctaType !== "none" && (
+                  <Field label="Buton metni" htmlFor="cta_text">
+                    <input
+                      id="cta_text"
+                      name="cta_text"
+                      value={ctaText}
+                      onChange={(event) => setCtaText(event.target.value)}
                       className={inputClassName}
+                      placeholder={HERO_SLIDE_CTA_DEFAULT_TEXT[ctaType]}
                       disabled={pending}
-                    >
-                      {HERO_SLIDE_CTA_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {HERO_SLIDE_CTA_LABELS[type]}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </Field>
+                )}
 
-                  {ctaType !== "none" && (
-                    <Field label="Buton metni" htmlFor="cta_text">
-                      <input
-                        id="cta_text"
-                        name="cta_text"
-                        value={ctaText}
-                        onChange={(event) => setCtaText(event.target.value)}
-                        className={inputClassName}
-                        placeholder={HERO_SLIDE_CTA_DEFAULT_TEXT[ctaType]}
-                        disabled={pending}
-                      />
-                    </Field>
-                  )}
-
-                  {ctaType === "book" && (
-                    <div className="sm:col-span-2">
-                      <Field label="Açılacak kitap" htmlFor="cta_book_id">
-                        <select
-                          id="cta_book_id"
-                          name="cta_book_id"
-                          value={selectedBookId}
-                          onChange={(event) =>
-                            setSelectedBookId(event.target.value)
+                {ctaType === "external" && (
+                  <div className="sm:col-span-2">
+                    <Field label="Web sitesi adresi" htmlFor="cta_external_url">
+                      <div className="relative">
+                        <ExternalLink
+                          size={16}
+                          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
+                        />
+                        <input
+                          id="cta_external_url"
+                          name="cta_external_url"
+                          type="url"
+                          defaultValue={
+                            slide?.cta_external_url ??
+                            (initialCtaType === "external"
+                              ? slide?.cta_link ?? ""
+                              : "")
                           }
-                          className={inputClassName}
+                          className={`${inputClassName} pl-11`}
+                          placeholder="https://ornek.com"
                           required
-                          disabled={pending || books.length === 0}
-                        >
-                          <option value="">Kitap seçin</option>
-                          {books.map((book) => (
-                            <option key={book.id} value={book.id}>
-                              {book.title}
-                            </option>
-                          ))}
-                        </select>
-                      </Field>
-                    </div>
-                  )}
+                          disabled={pending}
+                        />
+                      </div>
+                    </Field>
+                  </div>
+                )}
 
-                  {ctaType === "external" && (
-                    <div className="sm:col-span-2">
-                      <Field label="Web sitesi adresi" htmlFor="cta_external_url">
-                        <div className="relative">
-                          <ExternalLink
-                            size={16}
-                            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-                          />
-                          <input
-                            id="cta_external_url"
-                            name="cta_external_url"
-                            type="url"
-                            defaultValue={
-                              slide?.cta_external_url ??
-                              (initialCtaType === "external"
-                                ? slide?.cta_link ?? ""
-                                : "")
-                            }
-                            className={`${inputClassName} pl-11`}
-                            placeholder="https://ornek.com"
-                            required
-                            disabled={pending}
-                          />
-                        </div>
-                      </Field>
-                    </div>
-                  )}
-
-                  {ctaType === "shopier" && !hasShopierUrl && (
-                    <div
-                      role="status"
-                      className="sm:col-span-2 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2 text-xs text-danger"
-                    >
-                      Shopier adresi henüz Ayarlar bölümünde tanımlanmamış.
-                      Buton, adres eklenene kadar ana sayfada gösterilmez.
-                    </div>
-                  )}
-                </div>
+                {ctaType === "shopier" && !hasShopierUrl && (
+                  <div
+                    role="status"
+                    className="sm:col-span-2 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2 text-xs text-danger"
+                  >
+                    Shopier adresi henüz Ayarlar bölümünde tanımlanmamış.
+                    Buton, adres eklenene kadar ana sayfada gösterilmez.
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <Field label="Görüntülenme sırası" htmlFor="display_order">
@@ -354,57 +222,27 @@ export default function HeroSlideForm({
           </div>
         </section>
 
-        <aside className="space-y-4">
-          {presentationType === "image" ? (
-            <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)]">
-              <h2 className="mb-4 text-lg font-bold text-primary">
-                Tanıtım görseli
-              </h2>
-              <ImageUploader
-                currentImageUrl={imageUrl}
-                committedImageUrl={state.committedImageUrl}
-                onImageUploaded={setImageUrl}
-                onImageRemoved={() => setImageUrl("")}
-                onPersistedImageRemoved={deleteImageAction}
-                folder="slider"
-                aspectRatio="aspect-video"
-              />
-              <input type="hidden" name="image_url" value={imageUrl} />
-              <p className="mt-3 text-xs text-muted">
-                En iyi sonuç için yatay, yüksek kaliteli ve sıkıştırılmış bir
-                görsel kullanın.
-              </p>
-            </section>
-          ) : (
-            <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)]">
-              <h2 className="mb-4 text-lg font-bold text-primary">
-                Kitap önizlemesi
-              </h2>
-              <div className="relative mx-auto aspect-[2/3] max-w-56 overflow-hidden rounded-xl bg-gradient-to-br from-accent/20 to-primary/15 shadow-[var(--shadow-card)]">
-                {selectedBook?.cover_image_url ? (
-                  <ResilientImage
-                    src={selectedBook.cover_image_url}
-                    alt={selectedBook.title}
-                    fallback={
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <BookOpen size={52} className="text-accent/40" />
-                      </div>
-                    }
-                    fill
-                    className="object-cover"
-                    sizes="224px"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <BookOpen size={52} className="text-accent/40" />
-                  </div>
-                )}
-              </div>
-              <p className="mt-4 text-center text-sm font-medium text-primary">
-                {selectedBook?.title ?? "Önizleme için bir kitap seçin"}
-              </p>
-            </section>
-          )}
+        <aside>
+          <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)]">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-primary">
+              <ImageIcon size={19} className="text-accent" />
+              Tanıtım görseli
+            </h2>
+            <ImageUploader
+              currentImageUrl={imageUrl}
+              committedImageUrl={state.committedImageUrl}
+              onImageUploaded={setImageUrl}
+              onImageRemoved={() => setImageUrl("")}
+              onPersistedImageRemoved={deleteImageAction}
+              folder="slider"
+              aspectRatio="aspect-video"
+            />
+            <input type="hidden" name="image_url" value={imageUrl} />
+            <p className="mt-3 text-xs text-muted">
+              En iyi sonuç için yatay, yüksek kaliteli ve sıkıştırılmış bir
+              görsel kullanın.
+            </p>
+          </section>
         </aside>
       </div>
 

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Edit3, ImageIcon, Plus } from "lucide-react";
+import { Edit3, ImageIcon, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { HeroSlide } from "@/lib/types/database";
 import {
   HERO_SLIDE_CTA_LABELS,
-  inferLegacyCtaType,
+  normalizeHeroSlideCtaType,
 } from "@/lib/hero-slide-cta";
 import DeleteHeroSlideButton from "@/components/admin/DeleteHeroSlideButton";
 
@@ -19,17 +19,8 @@ const statusMessages: Record<string, string> = {
   updated: "Slayt başarıyla güncellendi.",
 };
 
-type AdminHeroSlide = HeroSlide & {
-  cta_book?: { title: string; cover_image_url: string | null } | null;
-};
-
-function getCtaTargetLabel(slide: AdminHeroSlide) {
-  const type = slide.cta_type ?? inferLegacyCtaType(slide.cta_link);
-
-  if (type === "book" && slide.cta_book?.title) {
-    return `Kitap: ${slide.cta_book.title}`;
-  }
-
+function getCtaTargetLabel(slide: HeroSlide) {
+  const type = normalizeHeroSlideCtaType(slide.cta_type, slide.cta_link);
   return HERO_SLIDE_CTA_LABELS[type];
 }
 
@@ -42,13 +33,11 @@ export default async function AdminSliderPage({
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("hero_slides")
-    .select(
-      "*, cta_book:books!hero_slides_cta_book_id_fkey(title, cover_image_url)"
-    )
+    .select("*")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 
-  const slides = (data as AdminHeroSlide[] | null) ?? [];
+  const slides = (data as HeroSlide[] | null) ?? [];
   const statusMessage = status ? statusMessages[status] : undefined;
 
   return (
@@ -109,43 +98,41 @@ export default async function AdminSliderPage({
       ) : (
         <div className="grid gap-4">
           {slides.map((slide) => {
-            const isBookShowcase = slide.presentation_type === "book";
-            const previewUrl = isBookShowcase
-              ? slide.cta_book?.cover_image_url
-              : slide.image_url;
-            const displayTitle = isBookShowcase
-              ? slide.cta_book?.title || "Kitap bulunamadı"
-              : slide.title || "Başlıksız slayt";
+            const displayTitle = slide.title || "Başlıksız slayt";
+            const ctaType = normalizeHeroSlideCtaType(
+              slide.cta_type,
+              slide.cta_link
+            );
 
             return (
-            <article
-              key={slide.id}
-              className="grid overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-card)] lg:grid-cols-[320px_minmax(0,1fr)]"
-            >
-              <div className="relative aspect-video bg-primary/10 lg:aspect-auto">
-                {previewUrl ? (
-                  <Image
-                    src={previewUrl}
-                    alt={displayTitle}
-                    fill
-                    className={isBookShowcase ? "object-contain p-5" : "object-cover"}
-                    sizes="(max-width: 1024px) 100vw, 320px"
-                  />
-                ) : (
-                  <div className="flex h-full min-h-48 items-center justify-center text-accent/30">
-                    {isBookShowcase ? <BookOpen size={34} /> : <ImageIcon size={34} />}
-                  </div>
-                )}
-                <span
-                  className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-medium ${
-                    slide.is_active
-                      ? "bg-success text-white"
-                      : "bg-primary/70 text-white"
-                  }`}
-                >
-                  {slide.is_active ? "Aktif" : "Pasif"}
-                </span>
-              </div>
+              <article
+                key={slide.id}
+                className="grid overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-card)] lg:grid-cols-[320px_minmax(0,1fr)]"
+              >
+                <div className="relative aspect-video bg-primary/10 lg:aspect-auto">
+                  {slide.image_url ? (
+                    <Image
+                      src={slide.image_url}
+                      alt={displayTitle}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 320px"
+                    />
+                  ) : (
+                    <div className="flex h-full min-h-48 items-center justify-center text-accent/30">
+                      <ImageIcon size={34} />
+                    </div>
+                  )}
+                  <span
+                    className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-medium ${
+                      slide.is_active
+                        ? "bg-success text-white"
+                        : "bg-primary/70 text-white"
+                    }`}
+                  >
+                    {slide.is_active ? "Aktif" : "Pasif"}
+                  </span>
+                </div>
 
               <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center">
                 <div className="min-w-0 flex-1">
@@ -153,21 +140,16 @@ export default async function AdminSliderPage({
                     <h2 className="text-lg font-bold text-primary">
                       {displayTitle}
                     </h2>
-                    <span className="rounded-full bg-primary/5 px-2.5 py-1 text-xs font-medium text-muted">
-                      {isBookShowcase ? "Kitap tanıtımı" : "Tanıtım görseli"}
-                    </span>
                     <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-dark">
                       Sıra: {slide.display_order}
                     </span>
                   </div>
-                  {!isBookShowcase && slide.subtitle && (
+                  {slide.subtitle && (
                     <p className="mt-2 line-clamp-2 text-sm text-primary/70">
                       {slide.subtitle}
                     </p>
                   )}
-                  {slide.cta_text &&
-                    (slide.cta_type ?? inferLegacyCtaType(slide.cta_link)) !==
-                      "none" && (
+                  {slide.cta_text && ctaType !== "none" && (
                     <p className="mt-2 text-xs text-muted">
                       Buton: {slide.cta_text} · {getCtaTargetLabel(slide)}
                     </p>
@@ -185,7 +167,7 @@ export default async function AdminSliderPage({
                   <DeleteHeroSlideButton id={slide.id} title={displayTitle} />
                 </div>
               </div>
-            </article>
+              </article>
             );
           })}
         </div>

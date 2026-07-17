@@ -6,7 +6,6 @@ import type {
 export const HERO_SLIDE_CTA_TYPES: HeroSlideCtaType[] = [
   "none",
   "books",
-  "book",
   "gallery",
   "about",
   "contact",
@@ -17,7 +16,6 @@ export const HERO_SLIDE_CTA_TYPES: HeroSlideCtaType[] = [
 export const HERO_SLIDE_CTA_LABELS: Record<HeroSlideCtaType, string> = {
   none: "Buton gösterme",
   books: "Kitaplar sayfası",
-  book: "Belirli bir kitap",
   gallery: "Galeri",
   about: "Hakkında",
   contact: "İletişim",
@@ -28,7 +26,6 @@ export const HERO_SLIDE_CTA_LABELS: Record<HeroSlideCtaType, string> = {
 export const HERO_SLIDE_CTA_DEFAULT_TEXT: Record<HeroSlideCtaType, string> = {
   none: "",
   books: "Kitapları Keşfet",
-  book: "Kitabı İncele",
   gallery: "Galeriyi Gör",
   about: "Daha Fazla Bilgi",
   contact: "İletişime Geç",
@@ -43,7 +40,7 @@ export function isHeroSlideCtaType(value: string): value is HeroSlideCtaType {
 export function inferLegacyCtaType(link: string | null): HeroSlideCtaType {
   if (!link) return "none";
   if (link === "/books") return "books";
-  if (link.startsWith("/books/")) return "book";
+  if (link.startsWith("/books/")) return "books";
   if (link === "/gallery") return "gallery";
   if (link === "/about") return "about";
   if (link === "/contact") return "contact";
@@ -52,12 +49,20 @@ export function inferLegacyCtaType(link: string | null): HeroSlideCtaType {
     : "none";
 }
 
+export function normalizeHeroSlideCtaType(
+  value: string | null | undefined,
+  legacyLink: string | null
+): HeroSlideCtaType {
+  if (value === "book") return "books";
+  if (value && isHeroSlideCtaType(value)) return value;
+  return inferLegacyCtaType(legacyLink);
+}
+
 export function resolveHeroSlideCtaHref(
   slide: {
-    cta_type: HeroSlideCtaType;
+    cta_type: HeroSlideCtaType | "book";
     cta_link: string | null;
     cta_external_url: string | null;
-    cta_book?: { slug: string; is_published?: boolean } | null;
   },
   settings: Pick<SiteSettings, "shopier_main_url">
 ) {
@@ -65,9 +70,7 @@ export function resolveHeroSlideCtaHref(
     case "books":
       return "/books";
     case "book":
-      return slide.cta_book?.slug && slide.cta_book.is_published !== false
-        ? `/books/${slide.cta_book.slug}`
-        : null;
+      return "/books";
     case "gallery":
       return "/gallery";
     case "about":

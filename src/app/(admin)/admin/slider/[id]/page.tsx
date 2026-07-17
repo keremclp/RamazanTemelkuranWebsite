@@ -19,13 +19,8 @@ export default async function EditHeroSlidePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data }, { data: books }, settings] = await Promise.all([
+  const [{ data }, settings] = await Promise.all([
     supabase.from("hero_slides").select("*").eq("id", id).single(),
-    supabase
-      .from("books")
-      .select("id, title, cover_image_url")
-      .eq("is_published", true)
-      .order("title"),
     getSiteSettings(),
   ]);
 
@@ -57,7 +52,6 @@ export default async function EditHeroSlidePage({
         action={updateAction}
         deleteImageAction={deleteImageAction}
         slide={slide}
-        books={books ?? []}
         hasShopierUrl={Boolean(settings.shopier_main_url)}
       />
     </div>
