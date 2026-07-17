@@ -50,8 +50,20 @@ export type HeroSlideCtaType =
   | "shopier"
   | "external";
 
+export type HeroSlidePresentationType = "image" | "book";
+
+export interface HeroSlideBook {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  cover_image_url: string | null;
+  is_published: boolean;
+}
+
 export interface HeroSlide {
   id: string;
+  presentation_type: HeroSlidePresentationType;
   image_url: string;
   title: string | null;
   subtitle: string | null;
@@ -68,6 +80,7 @@ export interface HeroSlide {
 
 export interface ResolvedHeroSlide extends HeroSlide {
   cta_href: string | null;
+  cta_book?: HeroSlideBook | null;
 }
 
 export interface AboutContent {

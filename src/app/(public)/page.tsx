@@ -7,6 +7,7 @@ import type {
   Book,
   Event,
   HeroSlide,
+  HeroSlideBook,
   Media,
   ResolvedHeroSlide,
   SiteSettings,
@@ -15,6 +16,7 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { formatDate, truncate } from "@/lib/utils/helpers";
 import HeroSlider from "@/components/public/HeroSlider";
 import { resolveHeroSlideCtaHref } from "@/lib/hero-slide-cta";
+import { canShowBookPresentation } from "@/lib/hero-slide-presentation";
 import { createPageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/public/JsonLd";
@@ -35,7 +37,7 @@ type HomeEvent = Event & {
 };
 
 type HomeHeroSlide = HeroSlide & {
-  cta_book?: { slug: string; is_published: boolean } | null;
+  cta_book?: HeroSlideBook | null;
 };
 
 function resolveHeroSlide(
@@ -54,7 +56,9 @@ async function getHomePageData() {
     const [slidesRes, booksRes, eventsRes, aboutRes, settings] = await Promise.all([
       supabase
         .from("hero_slides")
-        .select("*, cta_book:books!hero_slides_cta_book_id_fkey(slug, is_published)")
+        .select(
+          "*, cta_book:books!hero_slides_cta_book_id_fkey(id, title, slug, description, cover_image_url, is_published)"
+        )
         .eq("is_active", true)
         .order("display_order"),
       supabase
@@ -81,7 +85,11 @@ async function getHomePageData() {
     const slideRows = (slidesRes.data as HomeHeroSlide[] | null) ?? [];
 
     return {
-      heroSlides: slideRows.map((slide) => resolveHeroSlide(slide, settings)),
+      heroSlides: slideRows
+        .filter((slide) =>
+          canShowBookPresentation(slide.presentation_type, slide.cta_book)
+        )
+        .map((slide) => resolveHeroSlide(slide, settings)),
       featuredBooks: (booksRes.data as Book[] | null) ?? [],
       recentEvents: (eventsRes.data as HomeEvent[] | null) ?? [],
       about: (aboutRes.data as AboutContent | null) ?? null,

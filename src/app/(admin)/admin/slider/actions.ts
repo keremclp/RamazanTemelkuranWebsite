@@ -12,7 +12,11 @@ import {
   HERO_SLIDE_CTA_DEFAULT_TEXT,
   isHeroSlideCtaType,
 } from "@/lib/hero-slide-cta";
-import type { HeroSlideCtaType } from "@/lib/types/database";
+import { isHeroSlidePresentationType } from "@/lib/hero-slide-presentation";
+import type {
+  HeroSlideCtaType,
+  HeroSlidePresentationType,
+} from "@/lib/types/database";
 
 export interface HeroSlideFormState {
   message: string;
@@ -20,6 +24,7 @@ export interface HeroSlideFormState {
 }
 
 interface HeroSlidePayload {
+  presentation_type: HeroSlidePresentationType;
   image_url: string;
   title: string | null;
   subtitle: string | null;
@@ -65,6 +70,7 @@ async function getAuthenticatedClient() {
 }
 
 function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
+  const rawPresentationType = getString(formData, "presentation_type");
   const imageUrl = getString(formData, "image_url");
   const title = getString(formData, "title");
   const subtitle = getString(formData, "subtitle");
@@ -72,6 +78,38 @@ function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
   const ctaBookId = getString(formData, "cta_book_id");
   const ctaExternalUrl = getString(formData, "cta_external_url");
   const displayOrder = getOptionalNumber(formData, "display_order") ?? 0;
+
+  if (!isHeroSlidePresentationType(rawPresentationType)) {
+    return { error: "Geçerli bir slayt görünümü seçin." };
+  }
+
+  const presentationType = rawPresentationType;
+
+  if (presentationType === "book") {
+    if (!ctaBookId) {
+      return { error: "Tanıtılacak kitabı seçin." };
+    }
+
+    if (Number.isNaN(displayOrder) || displayOrder < 0) {
+      return { error: "Görüntülenme sırası sıfır veya daha büyük olmalıdır." };
+    }
+
+    return {
+      data: {
+        presentation_type: "book",
+        image_url: "",
+        title: null,
+        subtitle: null,
+        cta_text: HERO_SLIDE_CTA_DEFAULT_TEXT.book,
+        cta_link: null,
+        cta_type: "book",
+        cta_book_id: ctaBookId,
+        cta_external_url: null,
+        display_order: displayOrder,
+        is_active: getString(formData, "is_active") === "on",
+      },
+    };
+  }
 
   if (!isHeroSlideCtaType(rawCtaType)) {
     return { error: "Geçerli bir buton hedefi seçin." };
@@ -88,6 +126,10 @@ function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
     return { error: "Görüntülenme sırası sıfır veya daha büyük olmalıdır." };
   }
 
+  if (!imageUrl) {
+    return { error: "Tanıtım slaytı için bir görsel yükleyin." };
+  }
+
   if (ctaType === "book" && !ctaBookId) {
     return { error: "Butonun açacağı kitabı seçin." };
   }
@@ -98,6 +140,7 @@ function parseHeroSlideForm(formData: FormData): ParsedHeroSlideForm {
 
   return {
     data: {
+      presentation_type: "image",
       image_url: imageUrl,
       title: title || null,
       subtitle: subtitle || null,

@@ -62,6 +62,8 @@ ALTER TABLE events
 -- ============================================
 CREATE TABLE hero_slides (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  presentation_type TEXT NOT NULL DEFAULT 'image'
+    CHECK (presentation_type IN ('image', 'book')),
   image_url TEXT NOT NULL,
   title TEXT,
   subtitle TEXT,

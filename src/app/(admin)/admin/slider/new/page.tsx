@@ -15,7 +15,7 @@ export default async function NewHeroSlidePage() {
   const [{ data: books }, settings] = await Promise.all([
     supabase
       .from("books")
-      .select("id, title")
+      .select("id, title, cover_image_url")
       .eq("is_published", true)
       .order("title"),
     getSiteSettings(),

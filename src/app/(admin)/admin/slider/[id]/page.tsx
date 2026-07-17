@@ -23,7 +23,7 @@ export default async function EditHeroSlidePage({
     supabase.from("hero_slides").select("*").eq("id", id).single(),
     supabase
       .from("books")
-      .select("id, title")
+      .select("id, title, cover_image_url")
       .eq("is_published", true)
       .order("title"),
     getSiteSettings(),

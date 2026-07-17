@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit3, ImageIcon, Plus } from "lucide-react";
+import { BookOpen, Edit3, ImageIcon, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { HeroSlide } from "@/lib/types/database";
 import {
@@ -20,7 +20,7 @@ const statusMessages: Record<string, string> = {
 };
 
 type AdminHeroSlide = HeroSlide & {
-  cta_book?: { title: string } | null;
+  cta_book?: { title: string; cover_image_url: string | null } | null;
 };
 
 function getCtaTargetLabel(slide: AdminHeroSlide) {
@@ -42,7 +42,9 @@ export default async function AdminSliderPage({
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("hero_slides")
-    .select("*, cta_book:books!hero_slides_cta_book_id_fkey(title)")
+    .select(
+      "*, cta_book:books!hero_slides_cta_book_id_fkey(title, cover_image_url)"
+    )
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 
@@ -106,23 +108,32 @@ export default async function AdminSliderPage({
         </div>
       ) : (
         <div className="grid gap-4">
-          {slides.map((slide) => (
+          {slides.map((slide) => {
+            const isBookShowcase = slide.presentation_type === "book";
+            const previewUrl = isBookShowcase
+              ? slide.cta_book?.cover_image_url
+              : slide.image_url;
+            const displayTitle = isBookShowcase
+              ? slide.cta_book?.title || "Kitap bulunamadı"
+              : slide.title || "Başlıksız slayt";
+
+            return (
             <article
               key={slide.id}
               className="grid overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-card)] lg:grid-cols-[320px_minmax(0,1fr)]"
             >
               <div className="relative aspect-video bg-primary/10 lg:aspect-auto">
-                {slide.image_url ? (
+                {previewUrl ? (
                   <Image
-                    src={slide.image_url}
-                    alt={slide.title || ""}
+                    src={previewUrl}
+                    alt={displayTitle}
                     fill
-                    className="object-cover"
+                    className={isBookShowcase ? "object-contain p-5" : "object-cover"}
                     sizes="(max-width: 1024px) 100vw, 320px"
                   />
                 ) : (
                   <div className="flex h-full min-h-48 items-center justify-center text-accent/30">
-                    <ImageIcon size={34} />
+                    {isBookShowcase ? <BookOpen size={34} /> : <ImageIcon size={34} />}
                   </div>
                 )}
                 <span
@@ -140,13 +151,16 @@ export default async function AdminSliderPage({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-bold text-primary">
-                      {slide.title || "Başlıksız slayt"}
+                      {displayTitle}
                     </h2>
+                    <span className="rounded-full bg-primary/5 px-2.5 py-1 text-xs font-medium text-muted">
+                      {isBookShowcase ? "Kitap tanıtımı" : "Tanıtım görseli"}
+                    </span>
                     <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-dark">
                       Sıra: {slide.display_order}
                     </span>
                   </div>
-                  {slide.subtitle && (
+                  {!isBookShowcase && slide.subtitle && (
                     <p className="mt-2 line-clamp-2 text-sm text-primary/70">
                       {slide.subtitle}
                     </p>
@@ -168,11 +182,12 @@ export default async function AdminSliderPage({
                     <Edit3 size={15} />
                     Düzenle
                   </Link>
-                  <DeleteHeroSlideButton id={slide.id} title={slide.title} />
+                  <DeleteHeroSlideButton id={slide.id} title={displayTitle} />
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
