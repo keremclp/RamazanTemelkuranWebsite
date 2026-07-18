@@ -8,6 +8,7 @@ import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/public/JsonLd";
 import PageIntro from "@/components/public/PageIntro";
 import ResilientImage from "@/components/public/ResilientImage";
+import { parseBiographyBlocks } from "@/lib/biography";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -97,7 +98,8 @@ export default async function AboutPage() {
         {/* Hero Section */}
         <div className="mb-16 grid grid-cols-1 gap-8 animate-fade-in-up lg:grid-cols-5 lg:gap-10">
           {/* Portrait */}
-          <div className="lg:col-span-2">
+          {/* Make it center for portrait vertically */}
+          <div className="lg:col-span-2 lg:flex lg:items-center">
             <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card-hover)]">
               {about?.portrait_image_url ? (
                 <ResilientImage
@@ -125,9 +127,20 @@ export default async function AboutPage() {
 
             {about?.biography ? (
               <div className="space-y-4 text-primary/80 leading-relaxed">
-                {about.biography.split("\n\n").map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
+                {parseBiographyBlocks(about.biography).map((block, index) =>
+                  block.type === "list" ? (
+                    <ul
+                      key={`list-${index}`}
+                      className="list-disc space-y-2 pl-6 marker:text-accent"
+                    >
+                      {block.items.map((item, itemIndex) => (
+                        <li key={`${item}-${itemIndex}`}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p key={`paragraph-${index}`}>{block.text}</p>
+                  )
+                )}
               </div>
             ) : (
               <p className="text-muted italic">
