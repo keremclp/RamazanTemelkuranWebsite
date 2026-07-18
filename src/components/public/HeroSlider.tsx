@@ -17,7 +17,7 @@ interface HeroSliderProps {
   slides: ResolvedHeroSlide[];
 }
 
-const autoplayDelay = 6000;
+const autoplayDelay = 3000;
 const swipeThreshold = 50;
 
 export default function HeroSlider({ slides }: HeroSliderProps) {

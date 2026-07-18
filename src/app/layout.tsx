@@ -74,7 +74,6 @@ export default function RootLayout({
     >
       <body 
         className="min-h-screen flex flex-col antialiased"
-        cz-shortcut-listen="true"
       >
         {children}
       </body>

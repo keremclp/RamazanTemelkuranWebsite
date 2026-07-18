@@ -25,7 +25,7 @@ interface BookSliderProps {
   books: Book[];
 }
 
-const autoplayDelay = 6000;
+const autoplayDelay = 3000;
 const transitionFallbackDelay = 850;
 const swipeThreshold = 50;
 
