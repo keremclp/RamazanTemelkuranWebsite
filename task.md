@@ -27,7 +27,7 @@
 - [x] Books CRUD
 - [x] Events CRUD + media management
 - [x] Gallery management
-- [x] Hero slider management
+- [x] Hero slider management (uploaded banners plus curated Books/Shopier/event compositions)
 - [x] Automatic hero button destinations (page, Shopier, or external site)
 - [x] About page editor
 - [x] Contact messages viewer

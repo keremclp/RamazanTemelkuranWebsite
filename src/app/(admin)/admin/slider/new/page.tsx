@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import HeroSlideForm from "@/components/admin/HeroSlideForm";
+import { createClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/site-settings";
+import { getHeroSlideAdminOptions } from "@/lib/hero-slide-admin-data";
 import { createHeroSlideAction } from "../actions";
 
 export const metadata: Metadata = {
@@ -10,7 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function NewHeroSlidePage() {
-  const settings = await getSiteSettings();
+  const supabase = await createClient();
+  const [settings, options] = await Promise.all([
+    getSiteSettings(),
+    getHeroSlideAdminOptions(supabase),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -33,6 +39,10 @@ export default async function NewHeroSlidePage() {
       <HeroSlideForm
         action={createHeroSlideAction}
         hasShopierUrl={Boolean(settings.shopier_main_url)}
+        books={options.books}
+        events={options.events}
+        booksLoadFailed={Boolean(options.booksError)}
+        eventsLoadFailed={Boolean(options.eventsError)}
       />
     </div>
   );

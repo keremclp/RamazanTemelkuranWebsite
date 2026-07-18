@@ -1,9 +1,11 @@
 I examined the current implementation. The project is ready for this redesign, and your deleted book-showcase records remove the main data-migration risk.
 
+> **Curated homepage extension — 19 July 2026:** `Slider_Events_Books_Plan.md` supersedes only this document's “promotional-only homepage Slider” restriction. The Books-page and Gallery-page carousels remain unchanged. Homepage slides can now use an uploaded banner, a manually ordered book collection, or a manually ordered event collection.
+
 ## Implementation Status — 18 July 2026
 
 - Steps 1–10 are complete in source and have passed local automated/build/browser verification.
-- The homepage is promotional-only, `/books` uses the published-books carousel, and `/gallery` uses one event per carousel slide with an accessible media dialog.
+- The homepage supports uploaded promotional banners plus curated book/event compositions; `/books` still uses the published-books carousel, and `/gallery` still uses one event per carousel slide with an accessible media dialog.
 - Books, Gallery, About, and Contact share a compact internal-page introduction rhythm; Books and Gallery use viewport-aware carousel heights so their dots and pause controls remain visible on common laptop and phone screens.
 - The forward cleanup migration exists at `supabase/migrations/20260718_remove_hero_slide_book_presentation.sql` but has not been applied remotely by this implementation task.
 - Steps 11–12 remain production operations: deploy/verify the compatible code, then apply the cleanup migration and repeat production smoke tests.

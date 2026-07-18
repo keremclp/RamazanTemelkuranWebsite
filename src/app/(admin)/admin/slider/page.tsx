@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit3, ImageIcon, Plus } from "lucide-react";
+import { BookOpen, Edit3, ImageIcon, Images, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { HeroSlide } from "@/lib/types/database";
 import {
@@ -9,6 +9,7 @@ import {
   normalizeHeroSlideCtaType,
 } from "@/lib/hero-slide-cta";
 import DeleteHeroSlideButton from "@/components/admin/DeleteHeroSlideButton";
+import { normalizeHeroSlideVisualSource } from "@/lib/hero-slide-visual-source";
 
 export const metadata: Metadata = {
   title: "Slider",
@@ -31,14 +32,24 @@ export default async function AdminSliderPage({
 }) {
   const { status } = await searchParams;
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("hero_slides")
-    .select("*")
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
+  const [
+    { data, error },
+    { data: bookSelections },
+    { data: eventSelections },
+  ] = await Promise.all([
+    supabase
+      .from("hero_slides")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false }),
+    supabase.from("hero_slide_books").select("hero_slide_id"),
+    supabase.from("hero_slide_events").select("hero_slide_id"),
+  ]);
 
   const slides = (data as HeroSlide[] | null) ?? [];
   const statusMessage = status ? statusMessages[status] : undefined;
+  const bookSelectionCounts = countSelectionsBySlide(bookSelections ?? []);
+  const eventSelectionCounts = countSelectionsBySlide(eventSelections ?? []);
 
   return (
     <div className="space-y-6">
@@ -103,6 +114,21 @@ export default async function AdminSliderPage({
               slide.cta_type,
               slide.cta_link
             );
+            const visualSource = normalizeHeroSlideVisualSource(
+              slide.visual_source
+            );
+            const selectionCount =
+              visualSource === "selected_books"
+                ? bookSelectionCounts.get(slide.id) ?? 0
+                : visualSource === "selected_events"
+                  ? eventSelectionCounts.get(slide.id) ?? 0
+                  : null;
+            const SourceIcon =
+              visualSource === "selected_books"
+                ? BookOpen
+                : visualSource === "selected_events"
+                  ? Images
+                  : ImageIcon;
 
             return (
               <article
@@ -120,7 +146,7 @@ export default async function AdminSliderPage({
                     />
                   ) : (
                     <div className="flex h-full min-h-48 items-center justify-center text-accent/30">
-                      <ImageIcon size={34} />
+                      <SourceIcon size={34} />
                     </div>
                   )}
                   <span
@@ -142,6 +168,14 @@ export default async function AdminSliderPage({
                     </h2>
                     <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-dark">
                       Sıra: {slide.display_order}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/6 px-2.5 py-1 text-xs font-medium text-primary/70">
+                      <SourceIcon size={13} />
+                      {visualSource === "selected_books"
+                        ? `${selectionCount} kitap`
+                        : visualSource === "selected_events"
+                          ? `${selectionCount} etkinlik`
+                          : "Yüklenen görsel"}
                     </span>
                   </div>
                   {slide.subtitle && (
@@ -174,4 +208,16 @@ export default async function AdminSliderPage({
       )}
     </div>
   );
+}
+
+function countSelectionsBySlide(
+  selections: Array<{ hero_slide_id: string }>
+) {
+  return selections.reduce((counts, selection) => {
+    counts.set(
+      selection.hero_slide_id,
+      (counts.get(selection.hero_slide_id) ?? 0) + 1
+    );
+    return counts;
+  }, new Map<string, number>());
 }

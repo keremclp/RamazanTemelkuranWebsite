@@ -1,6 +1,9 @@
 import type { EventWithMedia, Media } from "@/lib/types/database";
 import { getYouTubeThumbnail } from "@/lib/utils/helpers";
 
+export const EVENT_MEDIA_RELATION_SELECT =
+  "media:media!media_event_id_fkey(id, event_id, type, url, thumbnail_url, caption, display_order, created_at)";
+
 type EventCoverSource = Pick<EventWithMedia, "homepage_media_id" | "media">;
 
 function byDisplayOrder(left: Media, right: Media) {

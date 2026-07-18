@@ -79,7 +79,7 @@ The following rules apply throughout Phase 4:
 - Public pages for home, books, book detail, gallery, about, and contact.
 - Admin CRUD for books, events, gallery, slider, About, messages, and settings.
 - Automatic book slug creation.
-- Promotional-only homepage Slider with dynamic page, Shopier, and external destinations.
+- Homepage Slider with uploaded promotional banners and manually curated book/event compositions, plus dynamic page, Shopier, and external destinations.
 - Supabase Storage cleanup and temporary-upload tracking.
 - Server-only contact submission, validation, honeypot, and durable Supabase-backed rate limiting.
 - Baseline metadata and dynamic book-detail metadata.
@@ -90,7 +90,7 @@ The following rules apply throughout Phase 4:
 
 ### Customer-requested slider architecture — implemented 18 July 2026
 
-- The homepage contains manually curated promotional slides only; individual books are no longer homepage slide records.
+- The homepage contains manually managed hero slides. A slide may use an uploaded promotional banner or a curated composition of up to six selected books/events; individual books and events never become automatic homepage slide records.
 - The homepage keeps the author introduction and compact social/contact closing section while duplicate book, event, and Shopier content grids are removed.
 - `/books` uses an automatic carousel supplied by published Admin → Books records. Book edits update the carousel without changing stable book URLs.
 - `/gallery` uses one event per carousel slide. Opening a slide reveals all of that event's photos and YouTube videos in an accessible dialog.
@@ -694,7 +694,7 @@ Add focused tests for:
 - [ ] Configure Production variables and only the required public Preview variables.
 - [ ] Audit/apply missing migrations through `20260717` in filename order.
 - [ ] Deploy the compatible code and test using the Vercel URL.
-- [ ] Apply the post-deploy `20260718` cleanup migration and repeat Slider smoke tests.
+- [ ] Apply `20260718` cleanup, `20260719` curated-slider, and `20260720` Shopier-showcase migrations in order, then repeat Slider smoke tests.
 - [ ] Complete Gate B content approval.
 
 Expected production environment variables include:
@@ -866,12 +866,12 @@ The technical, client-independent Phase 4 foundation is implemented in the repos
 - production origin, dynamic metadata, canonical URLs, social metadata, sitemap, robots, JSON-LD, breadcrumbs, icon, and default social image;
 - durable server-only contact rate limiting through Supabase;
 - loading, error, 404, missing-image, keyboard, focus, responsive, and reduced-motion improvements;
-- promotional-only homepage Slider and removal of duplicate homepage book/event/Shopier sections;
+- homepage Slider with uploaded banners and curated book/event compositions, while duplicate homepage content grids remain removed;
 - published-book carousel with crawlable `ItemList` structured data;
 - one-event-per-slide Gallery carousel, accessible event media dialog, photo lightbox, and safe YouTube links;
 - deterministic event-cover fallback and updated admin cover terminology;
 - active-slide-first image loading and stricter Supabase image-host configuration;
-- project-specific deployment documentation and 26 passing automated tests.
+- project-specific deployment documentation and an expanded automated regression suite.
 
 The following steps are intentionally still open:
 
@@ -879,15 +879,16 @@ The following steps are intentionally still open:
 2. Verify `SUPABASE_SECRET_KEY` and `SITE_URL` in Vercel Production. The secret key is server-only and must never be exposed to the browser.
 3. Complete the owner/client content checklist in Section 6.
 4. Obtain approval for the icon and social-sharing image drafts.
-5. Deploy the compatible source, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql` and repeat homepage/admin Slider smoke tests.
-6. Run the full device/performance matrix against the deployed Vercel build.
-7. Purchase/connect the domain, then complete Search Console submission and post-launch monitoring.
+5. Deploy the cleanup-compatible source if it is not already live, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, and `20260720_allow_shopier_book_showcases.sql` in order.
+6. Deploy the curated-slider source and verify all three visual-source modes plus the Shopier-targeted book composition before removing uploaded fallback banners.
+7. Run the full device/performance matrix against the deployed Vercel build.
+8. Purchase/connect the domain, then complete Search Console submission and post-launch monitoring.
 
 Phase 4 is therefore **implemented in source but not launch-complete**. Client approval, remote migration application, production deployment, DNS, and Google steps remain launch gates.
 
-### 17.1 Required migration/deployment sequence for the slider cleanup
+### 17.1 Required migration/deployment sequence for slider cleanup and curated sources
 
-The `20260718` migration removes the intermediate `presentation_type` and `cta_book_id` columns introduced for the retired homepage book-showcase mode. Apply it only through this forward-compatible sequence:
+The `20260718` migration removes the retired single-book homepage mode. The `20260719` migration adds curated multi-book/multi-event compositions and transactional Slider persistence. The `20260720` migration allows curated book compositions to target Shopier. Apply them through this forward-compatible sequence:
 
 1. Back up Supabase and record the applied migration list.
 2. Apply missing migrations in filename order through `20260717_add_hero_slide_presentation_type.sql`. In particular, current book publishing and durable contact behavior require both `20260715` migrations.
@@ -895,9 +896,13 @@ The `20260718` migration removes the intermediate `presentation_type` and `cta_b
 4. Deploy the application version that no longer reads the retired columns.
 5. Smoke-test the homepage, Books, Gallery, Admin → Slider, Admin → Books, Admin → Gallery, and the contact form.
 6. Apply `20260718_remove_hero_slide_book_presentation.sql`. The migration deactivates any unexpected remaining book-showcase rows, normalizes their CTA type, drops the obsolete columns, and reloads the PostgREST schema cache.
-7. Repeat homepage and Admin → Slider smoke tests and inspect Vercel/Supabase logs.
+7. Apply `20260719_add_curated_hero_slide_sources.sql`, which adds `visual_source`, ordered junction tables, RLS, and the transactional save RPC.
+8. Apply `20260720_allow_shopier_book_showcases.sql`, which permits selected-book compositions to target either Books or Shopier.
+9. Deploy the curated-slider application source.
+10. Test uploaded-image, selected-books, selected-events, and Shopier-targeted book compositions on desktop and mobile, then inspect Vercel/Supabase logs.
+11. Convert existing Books/Events/Shopier promotional slides and remove their uploaded fallbacks only after approval.
 
-Do not edit an older applied migration, drop the columns manually before the compatible deployment, or apply `20260718` out of filename order.
+Do not edit an older applied migration, drop columns manually, apply migrations out of filename order, or deploy Shopier-showcase code before `20260720` exists remotely.
 
 ## 18. Implementation Order
 
@@ -943,7 +948,7 @@ Do not edit an older applied migration, drop the columns manually before the com
 
 ### Stage 4A — Customer-requested slider redesign
 
-- [x] Restore the homepage promotional-only Slider and remove duplicate homepage grids.
+- [x] Restore the homepage Slider, remove duplicate homepage grids, and add curated book/event composition sources.
 - [x] Add the compact social/contact closing section.
 - [x] Replace the Books card grid with the automatic published-books carousel.
 - [x] Add crawlable Books `ItemList` structured data.
@@ -956,7 +961,7 @@ Do not edit an older applied migration, drop the columns manually before the com
 
 - [ ] Audit/apply missing migrations through `20260717`.
 - [ ] Deploy compatible application code.
-- [ ] Apply the post-deploy `20260718` slider cleanup migration.
+- [ ] Apply the `20260718` cleanup, `20260719` curated-slider, and `20260720` Shopier-showcase migrations in order.
 - [x] Run tests, lint, TypeScript, and build.
 - [ ] Perform complete public/admin smoke test.
 - [ ] Complete client content approval.

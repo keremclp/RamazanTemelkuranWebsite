@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/site-settings";
+import { getHeroSlideAdminOptions } from "@/lib/hero-slide-admin-data";
 import type { HeroSlide } from "@/lib/types/database";
 import HeroSlideForm from "@/components/admin/HeroSlideForm";
 import { deleteHeroSlideImageAction, updateHeroSlideAction } from "../actions";
@@ -19,9 +20,26 @@ export default async function EditHeroSlidePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data }, settings] = await Promise.all([
+  const [
+    { data },
+    settings,
+    options,
+    { data: bookSelections },
+    { data: eventSelections },
+  ] = await Promise.all([
     supabase.from("hero_slides").select("*").eq("id", id).single(),
     getSiteSettings(),
+    getHeroSlideAdminOptions(supabase),
+    supabase
+      .from("hero_slide_books")
+      .select("book_id, display_order")
+      .eq("hero_slide_id", id)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("hero_slide_events")
+      .select("event_id, display_order")
+      .eq("hero_slide_id", id)
+      .order("display_order", { ascending: true }),
   ]);
 
   if (!data) notFound();
@@ -53,6 +71,16 @@ export default async function EditHeroSlidePage({
         deleteImageAction={deleteImageAction}
         slide={slide}
         hasShopierUrl={Boolean(settings.shopier_main_url)}
+        books={options.books}
+        events={options.events}
+        booksLoadFailed={Boolean(options.booksError)}
+        eventsLoadFailed={Boolean(options.eventsError)}
+        initialBookIds={(bookSelections ?? []).map(
+          (selection) => selection.book_id
+        )}
+        initialEventIds={(eventSelections ?? []).map(
+          (selection) => selection.event_id
+        )}
       />
     </div>
   );

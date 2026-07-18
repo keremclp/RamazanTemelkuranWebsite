@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,7 +8,10 @@ import {
   Play,
 } from "lucide-react";
 import type { ResolvedHeroSlide } from "@/lib/types/database";
-import ResilientImage from "./ResilientImage";
+import UploadedImageSlideVisual from "@/components/public/hero-slides/UploadedImageSlideVisual";
+import BookCollectionSlideVisual from "@/components/public/hero-slides/BookCollectionSlideVisual";
+import EventCollectionSlideVisual from "@/components/public/hero-slides/EventCollectionSlideVisual";
+import ShopierBookSlideVisual from "@/components/public/hero-slides/ShopierBookSlideVisual";
 
 interface HeroSliderProps {
   slides: ResolvedHeroSlide[];
@@ -85,13 +87,10 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
   if (total === 0) return null;
 
   const activeSlide = slides[current] ?? slides[0];
-  const opensNewTab =
-    activeSlide.cta_type === "shopier" ||
-    activeSlide.cta_type === "external";
 
   return (
     <section
-      className="relative flex min-h-[85vh] touch-pan-y items-center overflow-hidden bg-primary"
+      className="relative min-h-[85vh] touch-pan-y overflow-hidden bg-primary"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       aria-roledescription="carousel"
@@ -99,64 +98,35 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
     >
       <div
         key={activeSlide.id}
-        className={`absolute inset-0 ${
+        className={`relative w-full ${
           prefersReducedMotion ? "" : "animate-fade-in"
         }`}
-        aria-hidden="true"
+        aria-roledescription="slide"
+        aria-label={`${current + 1} / ${total}`}
       >
-        {activeSlide.image_url ? (
-          <ResilientImage
-            src={activeSlide.image_url}
-            alt=""
-            fallback={<div className="absolute inset-0 bg-primary" />}
-            fill
-            className="object-cover"
+        {activeSlide.visual_source === "selected_books" ? (
+          activeSlide.cta_type === "shopier" ? (
+            <ShopierBookSlideVisual
+              slide={activeSlide}
+              priority={current === 0}
+            />
+          ) : (
+            <BookCollectionSlideVisual
+              slide={activeSlide}
+              priority={current === 0}
+            />
+          )
+        ) : activeSlide.visual_source === "selected_events" ? (
+          <EventCollectionSlideVisual
+            slide={activeSlide}
             priority={current === 0}
-            loading="eager"
-            sizes="100vw"
           />
         ) : (
-          <DecorativeBackground />
+          <UploadedImageSlideVisual
+            slide={activeSlide}
+            priority={current === 0}
+          />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/65 to-primary/35" />
-      </div>
-
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-14 py-24 sm:px-20 lg:px-24">
-        <div
-          key={activeSlide.id}
-          className={prefersReducedMotion ? "" : "animate-fade-in-up"}
-          aria-roledescription="slide"
-          aria-label={`${current + 1} / ${total}`}
-        >
-          <div className="max-w-2xl space-y-6">
-            {activeSlide.title && (
-              <h1 className="max-w-full break-words text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
-                {activeSlide.title}
-              </h1>
-            )}
-            {activeSlide.subtitle && (
-              <p className="max-w-full break-words text-lg leading-relaxed text-white/75 sm:text-xl">
-                {activeSlide.subtitle}
-              </p>
-            )}
-            {activeSlide.cta_text && activeSlide.cta_href && (
-              <div className="pt-1">
-                <Link
-                  href={activeSlide.cta_href}
-                  target={opensNewTab ? "_blank" : undefined}
-                  rel={opensNewTab ? "noopener noreferrer" : undefined}
-                  className="group inline-flex max-w-full items-center gap-2 break-words rounded-lg bg-accent px-6 py-3 font-medium text-white no-underline transition hover:bg-accent-dark"
-                >
-                  {activeSlide.cta_text}
-                  <ChevronRight
-                    size={16}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {total > 1 && (
@@ -235,17 +205,5 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
         {current + 1}. slayt: {activeSlide.title || "Öne çıkan içerik"}
       </p>
     </section>
-  );
-}
-
-function DecorativeBackground() {
-  return (
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 20% 15%, rgba(197, 165, 90, 0.26) 0%, transparent 38%), radial-gradient(circle at 85% 80%, rgba(197, 165, 90, 0.18) 0%, transparent 42%), linear-gradient(135deg, #171b28 0%, #262d3f 100%)",
-      }}
-    />
   );
 }

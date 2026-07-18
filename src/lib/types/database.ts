@@ -49,9 +49,14 @@ export type HeroSlideCtaType =
   | "shopier"
   | "external";
 
+export type HeroSlideVisualSource =
+  | "uploaded_image"
+  | "selected_books"
+  | "selected_events";
+
 export interface HeroSlide {
   id: string;
-  image_url: string;
+  image_url: string | null;
   title: string | null;
   subtitle: string | null;
   cta_text: string | null;
@@ -59,13 +64,48 @@ export interface HeroSlide {
   cta_link: string | null;
   cta_type: HeroSlideCtaType;
   cta_external_url: string | null;
+  visual_source: HeroSlideVisualSource;
   display_order: number;
   is_active: boolean;
   created_at: string;
 }
 
+export interface HeroSlideBookSelection {
+  hero_slide_id: string;
+  book_id: string;
+  display_order: number;
+}
+
+export interface HeroSlideEventSelection {
+  hero_slide_id: string;
+  event_id: string;
+  display_order: number;
+}
+
+export type HeroSlideBookOption = Pick<
+  Book,
+  "id" | "title" | "cover_image_url" | "is_published" | "display_order"
+>;
+
+export interface HeroSlideEventOption
+  extends Pick<Event, "id" | "title" | "event_date" | "location"> {
+  cover_image_url: string | null;
+}
+
+export type HeroSlideBookVisual = Pick<
+  Book,
+  "id" | "title" | "cover_image_url"
+>;
+
+export interface HeroSlideEventVisual
+  extends Pick<Event, "id" | "title"> {
+  cover_image_url: string | null;
+}
+
 export interface ResolvedHeroSlide extends HeroSlide {
   cta_href: string | null;
+  selected_books: HeroSlideBookVisual[];
+  selected_events: HeroSlideEventVisual[];
 }
 
 export interface AboutContent {

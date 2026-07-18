@@ -10,7 +10,12 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type {
   AboutContent,
+  Book,
+  Event,
   HeroSlide,
+  HeroSlideBookVisual,
+  HeroSlideEventVisual,
+  Media,
   ResolvedHeroSlide,
   SiteSettings,
 } from "@/lib/types/database";
@@ -22,6 +27,32 @@ import { createPageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/public/JsonLd";
 import ResilientImage from "@/components/public/ResilientImage";
+import {
+  EVENT_MEDIA_RELATION_SELECT,
+  getEventCoverImageUrl,
+  getEventCoverMedia,
+} from "@/lib/event-gallery";
+import { normalizeHeroSlideVisualSource } from "@/lib/hero-slide-visual-source";
+
+interface SelectedBookRow {
+  hero_slide_id: string;
+  display_order: number;
+  book:
+    | (Pick<Book, "id" | "title" | "cover_image_url" | "is_published">)
+    | Array<Pick<Book, "id" | "title" | "cover_image_url" | "is_published">>
+    | null;
+}
+
+interface SelectedEventRecord
+  extends Pick<Event, "id" | "title" | "homepage_media_id"> {
+  media: Media[];
+}
+
+interface SelectedEventRow {
+  hero_slide_id: string;
+  display_order: number;
+  event: SelectedEventRecord | SelectedEventRecord[] | null;
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -35,9 +66,57 @@ export async function generateMetadata(): Promise<Metadata> {
 
 function resolveHeroSlide(
   slide: HeroSlide,
-  settings: SiteSettings
+  settings: SiteSettings,
+  selectedBooks: HeroSlideBookVisual[],
+  selectedEvents: HeroSlideEventVisual[]
 ): ResolvedHeroSlide {
-  return { ...slide, cta_href: resolveHeroSlideCtaHref(slide, settings) };
+  return {
+    ...slide,
+    visual_source: normalizeHeroSlideVisualSource(slide.visual_source),
+    cta_href: resolveHeroSlideCtaHref(slide, settings),
+    selected_books: selectedBooks,
+    selected_events: selectedEvents,
+  };
+}
+
+function getSingleRelation<T>(relation: T | T[] | null) {
+  return Array.isArray(relation) ? relation[0] ?? null : relation;
+}
+
+function groupSelectedBooks(rows: SelectedBookRow[]) {
+  const booksBySlide = new Map<string, HeroSlideBookVisual[]>();
+
+  for (const row of rows) {
+    const book = getSingleRelation(row.book);
+    if (!book?.is_published) continue;
+    const books = booksBySlide.get(row.hero_slide_id) ?? [];
+    books.push({
+      id: book.id,
+      title: book.title,
+      cover_image_url: book.cover_image_url,
+    });
+    booksBySlide.set(row.hero_slide_id, books);
+  }
+
+  return booksBySlide;
+}
+
+function groupSelectedEvents(rows: SelectedEventRow[]) {
+  const eventsBySlide = new Map<string, HeroSlideEventVisual[]>();
+
+  for (const row of rows) {
+    const event = getSingleRelation(row.event);
+    if (!event) continue;
+    const events = eventsBySlide.get(row.hero_slide_id) ?? [];
+    events.push({
+      id: event.id,
+      title: event.title,
+      cover_image_url: getEventCoverImageUrl(getEventCoverMedia(event)),
+    });
+    eventsBySlide.set(row.hero_slide_id, events);
+  }
+
+  return eventsBySlide;
 }
 
 async function getHomePageData() {
@@ -55,9 +134,46 @@ async function getHomePageData() {
     ]);
 
     const slideRows = (slidesRes.data as HeroSlide[] | null) ?? [];
+    const slideIds = slideRows.map((slide) => slide.id);
+    let selectedBookRows: SelectedBookRow[] = [];
+    let selectedEventRows: SelectedEventRow[] = [];
+
+    if (slideIds.length > 0) {
+      const [bookSelectionsResult, eventSelectionsResult] = await Promise.all([
+        supabase
+          .from("hero_slide_books")
+          .select(
+            "hero_slide_id, display_order, book:books(id, title, cover_image_url, is_published)"
+          )
+          .in("hero_slide_id", slideIds)
+          .order("display_order", { ascending: true }),
+        supabase
+          .from("hero_slide_events")
+          .select(
+            `hero_slide_id, display_order, event:events(id, title, homepage_media_id, ${EVENT_MEDIA_RELATION_SELECT})`
+          )
+          .in("hero_slide_id", slideIds)
+          .order("display_order", { ascending: true }),
+      ]);
+
+      selectedBookRows =
+        (bookSelectionsResult.data as SelectedBookRow[] | null) ?? [];
+      selectedEventRows =
+        (eventSelectionsResult.data as SelectedEventRow[] | null) ?? [];
+    }
+
+    const booksBySlide = groupSelectedBooks(selectedBookRows);
+    const eventsBySlide = groupSelectedEvents(selectedEventRows);
 
     return {
-      heroSlides: slideRows.map((slide) => resolveHeroSlide(slide, settings)),
+      heroSlides: slideRows.map((slide) =>
+        resolveHeroSlide(
+          slide,
+          settings,
+          booksBySlide.get(slide.id) ?? [],
+          eventsBySlide.get(slide.id) ?? []
+        )
+      ),
       about: (aboutRes.data as AboutContent | null) ?? null,
       settings,
     };
