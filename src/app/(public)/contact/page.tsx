@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Mail, MapPin } from "lucide-react";
 import ContactForm from "@/components/public/ContactForm";
+import PageIntro from "@/components/public/PageIntro";
 import { getSiteSettings } from "@/lib/site-settings";
 import type { SocialLinks } from "@/lib/types/database";
 import { createPageMetadata } from "@/lib/seo";
@@ -54,21 +55,16 @@ export default async function ContactPage() {
   const hasContactDetails = Boolean(contactEmail || contactLocation);
 
   return (
-    <section className="section-padding">
+    <section className="py-6 sm:py-10 lg:py-12">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-16 text-center animate-fade-in-up">
-          <h1 className="mb-4 text-4xl font-bold text-primary font-[family-name:var(--font-heading)] md:text-5xl">
-            İletişim
-          </h1>
-          <div className="mx-auto mb-4 h-1 w-16 bg-accent" />
-          <p className="mx-auto max-w-2xl text-lg text-muted">
-            Sorularınız, önerileriniz veya iş birliği talepleriniz için bizimle iletişime geçin.
-          </p>
-        </div>
+        <PageIntro
+          title="İletişim"
+          description="Sorularınız, önerileriniz veya iş birliği talepleriniz için bizimle iletişime geçin."
+        />
 
-        <div className="grid grid-cols-1 gap-12 animate-fade-in-up lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 animate-fade-in-up lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <div className="rounded-[var(--radius-xl)] bg-surface p-8 shadow-[var(--shadow-card)]">
+            <div className="rounded-[var(--radius-xl)] bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
               <h2 className="mb-6 text-xl font-bold text-primary font-[family-name:var(--font-heading)]">
                 Mesaj Gönderin
               </h2>
@@ -78,7 +74,7 @@ export default async function ContactPage() {
 
           <div className="space-y-6">
             {hasContactDetails && (
-              <div className="rounded-[var(--radius-xl)] bg-surface p-8 shadow-[var(--shadow-card)]">
+              <div className="rounded-[var(--radius-xl)] bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
                 <h3 className="mb-6 text-lg font-bold text-primary font-[family-name:var(--font-heading)]">
                   İletişim Bilgileri
                 </h3>
@@ -117,7 +113,7 @@ export default async function ContactPage() {
             )}
 
             {socialEntries.length > 0 && (
-              <div className="rounded-[var(--radius-xl)] bg-surface p-8 shadow-[var(--shadow-card)]">
+              <div className="rounded-[var(--radius-xl)] bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
                 <h3 className="mb-6 text-lg font-bold text-primary font-[family-name:var(--font-heading)]">
                   Sosyal Medya
                 </h3>

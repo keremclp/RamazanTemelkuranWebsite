@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import type { EventWithMedia } from "@/lib/types/database";
 import EventGallerySlider from "@/components/public/EventGallerySlider";
+import PageIntro from "@/components/public/PageIntro";
 import { getSiteSettings } from "@/lib/site-settings";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -34,17 +35,12 @@ export default async function GalleryPage() {
   }));
 
   return (
-    <section className="section-padding">
+    <section className="py-6 sm:py-10 lg:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-heading)] text-primary mb-4">
-            Galeri
-          </h1>
-          <div className="w-16 h-1 bg-accent mx-auto mb-4"></div>
-          <p className="text-muted text-lg max-w-2xl mx-auto">
-            Etkinlik fotoğrafları ve video kayıtları.
-          </p>
-        </div>
+        <PageIntro
+          title="Galeri"
+          description="Etkinlik fotoğrafları ve video kayıtları."
+        />
 
         <EventGallerySlider events={eventsWithMedia} />
       </div>

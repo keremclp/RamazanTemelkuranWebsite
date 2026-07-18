@@ -1,5 +1,14 @@
 I examined the current implementation. The project is ready for this redesign, and your deleted book-showcase records remove the main data-migration risk.
 
+## Implementation Status — 18 July 2026
+
+- Steps 1–10 are complete in source and have passed local automated/build/browser verification.
+- The homepage is promotional-only, `/books` uses the published-books carousel, and `/gallery` uses one event per carousel slide with an accessible media dialog.
+- Books, Gallery, About, and Contact share a compact internal-page introduction rhythm; Books and Gallery use viewport-aware carousel heights so their dots and pause controls remain visible on common laptop and phone screens.
+- The forward cleanup migration exists at `supabase/migrations/20260718_remove_hero_slide_book_presentation.sql` but has not been applied remotely by this implementation task.
+- Steps 11–12 remain production operations: deploy/verify the compatible code, then apply the cleanup migration and repeat production smoke tests.
+- Client content approval, domain connection, Search Console, and deployed performance/device checks remain Phase 4 launch gates.
+
 The final architecture should be:
 
 ```mermaid
@@ -126,10 +135,12 @@ Because the book-showcase rows are already deleted, the migration can safely:
 
 For deployment safety:
 
-1. Deploy code that no longer depends on these columns.
-2. Verify the website.
-3. Apply the cleanup migration.
-4. Reload Supabase’s PostgREST schema cache.
+1. Back up Supabase and audit the applied migration list.
+2. Apply missing migrations in filename order through `20260717`; the current book/contact behavior requires the two `20260715` migrations.
+3. Deploy code that no longer depends on the retired slider columns.
+4. Verify the public website and Admin → Slider.
+5. Apply the `20260718` cleanup migration. It reloads Supabase’s PostgREST schema cache.
+6. Repeat the homepage and Admin → Slider smoke tests.
 
 ### 3. Restore the homepage promotional slider
 
@@ -186,6 +197,7 @@ Behavior:
 - Render all published books in a horizontally sliding carousel.
 - Render all book titles and links in the initial HTML for crawlability.
 - Use book covers lazily, except for the first visible cover.
+- Keep the complete active slide and its navigation controls inside the initial viewport on common 1280×720 and larger laptop screens.
 - Provide automatic movement, arrows, dots, swipe, and pause behavior.
 - Avoid rendering navigation controls when only one book exists.
 - Show an intentional empty state when no books are published.
@@ -201,6 +213,8 @@ Add:
 - an accessible `EventMediaDialog` or equivalent viewer
 
 Each event slide will show only its selected lead media and event information. This avoids loading every gallery photo visibly at the same time.
+
+The Gallery page uses the same compact page introduction and viewport-aware slide-height rules as the Books page so its navigation controls remain immediately discoverable.
 
 When the visitor opens an event:
 

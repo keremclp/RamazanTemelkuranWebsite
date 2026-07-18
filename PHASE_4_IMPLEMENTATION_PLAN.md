@@ -8,8 +8,8 @@
 **Hosting:** Vercel  
 **Domain registrar / DNS:** Natro  
 **Backend:** Supabase  
-**Plan status:** Ready for approval; implementation has not started  
-**Last reviewed:** 2026-07-15
+**Plan status:** Implemented in source; production launch gates remain open
+**Last reviewed:** 2026-07-18
 
 ---
 
@@ -60,7 +60,7 @@ The following rules apply throughout Phase 4:
 | Site identity | `Ramazan Temelkuran` / `Yazar Ramazan Temelkuran` |
 | Analytics | None for launch |
 | Contact notifications | Admin panel only; no email notification integration |
-| Public launch | Final public launch after a Vercel production-preview verification pass |
+| Public launch | Final public launch after a Vercel Preview/local review pass; do not use an indexable Production deployment for unapproved content |
 | Structured identity | `WebSite`, `ProfilePage`, and `Person`; do not present the author as a local business |
 | Book SEO | Dynamic metadata and `Book` structured data from Supabase |
 | Admin SEO | `noindex`; excluded from sitemap and crawler routes |
@@ -79,38 +79,39 @@ The following rules apply throughout Phase 4:
 - Public pages for home, books, book detail, gallery, about, and contact.
 - Admin CRUD for books, events, gallery, slider, About, messages, and settings.
 - Automatic book slug creation.
-- Dynamic slider CTA destinations.
+- Promotional-only homepage Slider with dynamic page, Shopier, and external destinations.
 - Supabase Storage cleanup and temporary-upload tracking.
-- Contact form validation, honeypot, and basic in-process rate limiting.
+- Server-only contact submission, validation, honeypot, and durable Supabase-backed rate limiting.
 - Baseline metadata and dynamic book-detail metadata.
 - Admin/login `noindex` metadata.
 - Responsive components and several accessibility improvements.
 - Resilient image fallbacks.
 - Unit tests for slugs, CTA resolution, YouTube parsing, URL validation, uploads, and Storage paths.
 
+### Customer-requested slider architecture — implemented 18 July 2026
+
+- The homepage contains manually curated promotional slides only; individual books are no longer homepage slide records.
+- The homepage keeps the author introduction and compact social/contact closing section while duplicate book, event, and Shopier content grids are removed.
+- `/books` uses an automatic carousel supplied by published Admin → Books records. Book edits update the carousel without changing stable book URLs.
+- `/gallery` uses one event per carousel slide. Opening a slide reveals all of that event's photos and YouTube videos in an accessible dialog.
+- Event covers use the existing `homepage_media_id` database column with updated `Etkinlik kapak görseli` admin terminology.
+- Event-cover fallback is deterministic: selected photo, first ordered photo, first valid video thumbnail, then neutral placeholder.
+- Homepage, Books, and Gallery carousels support autoplay, arrows, dots, swipe, pause, page-visibility handling, reduced-motion preferences, and accessible focus behavior.
+- Books, Gallery, About, and Contact use a compact shared page introduction; Books and Gallery slide heights adapt to phone and laptop viewport height so the active content and controls are visible without unnecessary initial scrolling.
+- The Books page includes crawlable `ItemList` JSON-LD; Gallery event information remains server-rendered without unsupported Event rich-result markup or invented event URLs.
+
 ### Still missing or incomplete
 
-- Production site-origin configuration and `metadataBase`.
-- Explicit canonical URLs.
-- Complete per-route Open Graph and Twitter metadata.
-- Production favicon, application icons, and social-sharing image.
-- Dynamic `sitemap.xml`.
-- Production-aware `robots.txt`.
-- JSON-LD structured data.
-- Stable book slugs after title edits.
-- A draft/published state for books.
-- Durable contact rate limiting suitable for Vercel serverless instances.
-- Custom public 404 and global error experiences.
-- Formal responsive/browser test matrix.
-- Reduced-motion treatment for all animations and hero autoplay.
+- Client approval of biography, portrait, launch content, favicon, and social-sharing image.
+- Remote Supabase migration audit/application and production policy verification.
+- Verification of all required Vercel Production environment variables.
+- Full deployed device/browser/accessibility matrix.
 - Production Lighthouse/Core Web Vitals audit.
-- Bundle and media-loading review.
-- Deliberate route/form loading feedback for slower Supabase operations.
-- Explicit font-loading and typography layout-shift audit.
 - Natro/Vercel domain configuration.
 - Supabase production URL configuration verification.
 - Google Search Console ownership, sitemap submission, and indexing checks.
-- Project-specific README and operations documentation.
+- Privacy/KVKK decision and final launch ownership record.
+- Optional explicit indexing switch if the permanent Vercel Production URL must continue serving unapproved review content; the current guard makes every Production deployment indexable.
 
 ---
 
@@ -251,8 +252,8 @@ Add a simple `is_published` state:
 - New books may be saved as draft or published deliberately.
 - Public book lists and details query published books only.
 - The sitemap includes published books only.
-- Homepage/related-book queries include published books only.
-- A slider CTA to an unpublished/deleted book must disappear safely instead of creating a broken link.
+- The Books carousel and related-book queries include published books only.
+- Unpublishing removes the book from the carousel, recommendations, detail route, structured data, and sitemap.
 - Admin lists show a clear `Taslak` or `Yayında` badge.
 - Deleting a book remains available for mistakes/test records, with a clear permanent-deletion warning.
 
@@ -507,8 +508,8 @@ At every relevant viewport, explicitly test:
 
 - public and admin navigation;
 - book, event, slider, About, Settings, gallery, and contact forms;
-- gallery filters and media cards;
-- lightbox controls and focus behavior;
+- Books and Gallery carousel controls, autoplay, swipe, and content stress cases;
+- event media dialog and nested lightbox controls, focus trapping, Escape behavior, and focus restoration;
 - hero slider controls, autoplay, and CTA buttons;
 - primary, secondary, destructive, loading, and disabled button states.
 
@@ -635,7 +636,8 @@ Add focused tests for:
 - canonical URL generation;
 - metadata fallbacks;
 - structured-data serialization and sanitization;
-- slider CTA behavior for unpublished/deleted books;
+- promotional slider CTA validation;
+- carousel index wrapping and event-cover fallback selection;
 - production versus preview robots behavior;
 - durable contact rate limiting.
 
@@ -643,10 +645,12 @@ Add focused tests for:
 
 - Home loads with correct content and metadata.
 - Navbar/footer links work.
-- All books and book details work.
+- Books carousel and all book details work.
 - Draft books are not public.
 - Deleted book URL returns 404.
-- Gallery images and YouTube videos work.
+- Gallery event carousel, event media dialog, images, and YouTube links work.
+- Opening an event dialog pauses the outer carousel.
+- Closing the photo lightbox restores focus inside the event dialog; closing the event dialog restores focus to its trigger.
 - About content and social links are accurate.
 - Contact form creates a message and rate limits correctly.
 - Empty/missing optional content is intentional.
@@ -677,6 +681,7 @@ Add focused tests for:
 - Confirm no `noindex` on production public pages.
 - Confirm `noindex` on admin/login pages.
 - Confirm preview deployments are not indexable.
+- Do not promote unapproved review content to Vercel Production: the current indexing guard treats every Production deployment, including its `vercel.app` URL, as indexable.
 
 ---
 
@@ -686,9 +691,10 @@ Add focused tests for:
 
 - [ ] Push a clean, verified `main` branch to GitHub.
 - [ ] Import/link the repository in Vercel.
-- [ ] Configure Production and Preview environment variables.
-- [ ] Apply/verify Supabase migrations in the correct order.
-- [ ] Deploy and test using the Vercel URL.
+- [ ] Configure Production variables and only the required public Preview variables.
+- [ ] Audit/apply missing migrations through `20260717` in filename order.
+- [ ] Deploy the compatible code and test using the Vercel URL.
+- [ ] Apply the post-deploy `20260718` cleanup migration and repeat Slider smoke tests.
 - [ ] Complete Gate B content approval.
 
 Expected production environment variables include:
@@ -800,11 +806,14 @@ Phase 4 is complete only if admin changes produce the following behavior:
 |---|---|---|
 | Create draft book | Visible in admin only | Not in sitemap or Google |
 | Publish book | Public page becomes available | Added automatically to sitemap; discoverable later |
+| Reorder published books | Books carousel order updates | No URL change; ordering may be observed after recrawl |
 | Edit title | Visible title/metadata update; URL remains stable | Google updates title/snippet after recrawl |
 | Edit description/cover | Public page, metadata, OG, and Book data update | Search result/image may update later |
 | Unpublish book | Public page unavailable and removed from sitemap | Existing result may disappear after recrawl |
 | Delete book | Row and cover removed; URL returns 404 | Old result can remain temporarily, then be removed |
-| Add event/gallery media | Public pages update | Google may discover updated page/media later |
+| Add event/gallery media | Event slide and its media dialog update | Google may discover updated page/media later |
+| Select/remove event cover | Gallery slide uses the selected photo or automatic fallback | Google Images may update after recrawl |
+| Edit homepage Slider | The promotional homepage slider updates | Homepage text/image signals may update after recrawl |
 | Edit About | Visible biography and Person/ProfilePage data update | Google processes the updated identity later |
 | Change social URLs | Public links and `sameAs` update | Entity associations may update later |
 | Change site title | Global branding and metadata update | Major search-display changes happen after recrawl and are not immediate |
@@ -848,28 +857,47 @@ Do not place passwords, tokens, private keys, or service-role keys in documentat
 
 ---
 
-## 17. Current Implementation Status — 15 July 2026
+## 17. Current Implementation Status — 18 July 2026
 
 The technical, client-independent Phase 4 foundation is implemented in the repository:
 
 - stable book slugs and Draft/Published behavior;
-- public filtering and slider safeguards for draft books;
+- public filtering and automatic Books-carousel safeguards for draft books;
 - production origin, dynamic metadata, canonical URLs, social metadata, sitemap, robots, JSON-LD, breadcrumbs, icon, and default social image;
 - durable server-only contact rate limiting through Supabase;
 - loading, error, 404, missing-image, keyboard, focus, responsive, and reduced-motion improvements;
-- active-slide-only hero rendering and stricter Supabase image-host configuration;
-- project-specific deployment documentation and 18 passing automated tests.
+- promotional-only homepage Slider and removal of duplicate homepage book/event/Shopier sections;
+- published-book carousel with crawlable `ItemList` structured data;
+- one-event-per-slide Gallery carousel, accessible event media dialog, photo lightbox, and safe YouTube links;
+- deterministic event-cover fallback and updated admin cover terminology;
+- active-slide-first image loading and stricter Supabase image-host configuration;
+- project-specific deployment documentation and 26 passing automated tests.
 
 The following steps are intentionally still open:
 
-1. Apply the two `20260715` Supabase migrations and verify them against the real project.
-2. Add `SUPABASE_SECRET_KEY` and `SITE_URL` to Vercel Production. The secret key is server-only and must never be exposed to the browser.
+1. Audit the remote migration history and apply any missing migrations through `20260717` in filename order before deploying code that depends on them.
+2. Verify `SUPABASE_SECRET_KEY` and `SITE_URL` in Vercel Production. The secret key is server-only and must never be exposed to the browser.
 3. Complete the owner/client content checklist in Section 6.
 4. Obtain approval for the icon and social-sharing image drafts.
-5. Run the full device/performance matrix against the deployed Vercel build.
-6. Purchase/connect the domain, then complete Search Console submission and post-launch monitoring.
+5. Deploy the compatible source, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql` and repeat homepage/admin Slider smoke tests.
+6. Run the full device/performance matrix against the deployed Vercel build.
+7. Purchase/connect the domain, then complete Search Console submission and post-launch monitoring.
 
 Phase 4 is therefore **implemented in source but not launch-complete**. Client approval, remote migration application, production deployment, DNS, and Google steps remain launch gates.
+
+### 17.1 Required migration/deployment sequence for the slider cleanup
+
+The `20260718` migration removes the intermediate `presentation_type` and `cta_book_id` columns introduced for the retired homepage book-showcase mode. Apply it only through this forward-compatible sequence:
+
+1. Back up Supabase and record the applied migration list.
+2. Apply missing migrations in filename order through `20260717_add_hero_slide_presentation_type.sql`. In particular, current book publishing and durable contact behavior require both `20260715` migrations.
+3. Configure/verify the four Production environment variables without exposing `SUPABASE_SECRET_KEY` to Preview or the browser.
+4. Deploy the application version that no longer reads the retired columns.
+5. Smoke-test the homepage, Books, Gallery, Admin → Slider, Admin → Books, Admin → Gallery, and the contact form.
+6. Apply `20260718_remove_hero_slide_book_presentation.sql`. The migration deactivates any unexpected remaining book-showcase rows, normalizes their CTA type, drops the obsolete columns, and reloads the PostgREST schema cache.
+7. Repeat homepage and Admin → Slider smoke tests and inspect Vercel/Supabase logs.
+
+Do not edit an older applied migration, drop the columns manually before the compatible deployment, or apply `20260718` out of filename order.
 
 ## 18. Implementation Order
 
@@ -883,7 +911,7 @@ Phase 4 is therefore **implemented in source but not launch-complete**. Client a
 
 - [x] Make book slugs stable after creation.
 - [x] Add book draft/published behavior.
-- [x] Update public/admin queries and CTA handling.
+- [x] Update public/admin queries and promotional CTA handling.
 - [x] Add migrations and tests.
 - [x] Replace in-memory-only contact rate limiting.
 
@@ -910,13 +938,26 @@ Phase 4 is therefore **implemented in source but not launch-complete**. Client a
 - [ ] Full deployed accessibility audit.
 - [x] Reduced-motion and animation polish.
 - [x] Error/404 polish.
-- [ ] Performance measurement and optimization.
+- [x] Source-level image, rendering, and carousel performance optimization.
+- [ ] Deployed Lighthouse/Core Web Vitals measurement and follow-up optimization.
+
+### Stage 4A — Customer-requested slider redesign
+
+- [x] Restore the homepage promotional-only Slider and remove duplicate homepage grids.
+- [x] Add the compact social/contact closing section.
+- [x] Replace the Books card grid with the automatic published-books carousel.
+- [x] Add crawlable Books `ItemList` structured data.
+- [x] Replace the Gallery filter/grid with one event per carousel slide.
+- [x] Add the accessible event media dialog and retain the photo lightbox.
+- [x] Add deterministic event-cover fallback and admin terminology.
+- [x] Verify desktop/mobile rendering, autoplay, pause, focus restoration, and overflow locally.
 
 ### Stage 5 — Production verification
 
-- [ ] Apply all migrations.
+- [ ] Audit/apply missing migrations through `20260717`.
+- [ ] Deploy compatible application code.
+- [ ] Apply the post-deploy `20260718` slider cleanup migration.
 - [x] Run tests, lint, TypeScript, and build.
-- [ ] Deploy to Vercel.
 - [ ] Perform complete public/admin smoke test.
 - [ ] Complete client content approval.
 

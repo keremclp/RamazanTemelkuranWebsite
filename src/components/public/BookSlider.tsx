@@ -311,15 +311,15 @@ function BookSlide({
 }) {
   return (
     <article
-      className="relative min-h-[620px] w-full shrink-0 overflow-hidden"
+      className="relative min-h-[600px] w-full shrink-0 overflow-hidden sm:min-h-[560px] lg:h-[clamp(450px,calc(100dvh-17rem),500px)] lg:min-h-0"
       aria-roledescription="slide"
       aria-label={`${position + 1} / ${total}`}
       aria-hidden={!isActive}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(197,165,90,0.22),transparent_38%),radial-gradient(circle_at_90%_85%,rgba(197,165,90,0.12),transparent_40%)]" />
-      <div className="relative mx-auto grid min-h-[620px] w-full max-w-6xl items-center gap-8 px-14 pb-24 pt-16 sm:px-20 lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)] lg:gap-16 lg:px-24">
+      <div className="relative mx-auto grid min-h-[600px] w-full max-w-6xl items-center gap-5 px-12 pb-16 pt-6 sm:min-h-[560px] sm:px-16 sm:pb-20 sm:pt-8 md:grid-cols-[minmax(150px,190px)_minmax(0,1fr)] md:gap-10 md:px-20 lg:h-[clamp(450px,calc(100dvh-17rem),500px)] lg:min-h-0 lg:grid-cols-[minmax(170px,210px)_minmax(0,1fr)] lg:gap-12 lg:px-24">
         <div className="flex justify-center">
-          <div className="relative aspect-[2/3] w-40 overflow-hidden rounded-lg bg-white/5 shadow-2xl shadow-black/40 ring-1 ring-white/15 sm:w-52 lg:w-64">
+          <div className="relative aspect-[2/3] w-32 overflow-hidden rounded-lg bg-white/5 shadow-2xl shadow-black/40 ring-1 ring-white/15 sm:w-40 md:w-44 lg:w-48">
             {book.cover_image_url ? (
               <ResilientImage
                 src={book.cover_image_url}
@@ -331,8 +331,8 @@ function BookSlide({
                 }
                 fill
                 className="object-cover"
-                priority={priority}
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 208px, 256px"
+                loading={priority ? "eager" : "lazy"}
+                sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 176px, 192px"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/25 to-white/5">
@@ -342,19 +342,19 @@ function BookSlide({
           </div>
         </div>
 
-        <div className="space-y-5 text-center lg:text-left">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-accent">
+        <div className="space-y-4 text-center md:text-left">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent sm:text-sm">
             Yazarın eserleri
           </p>
-          <h2 className="break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
+          <h2 className="break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.75rem]">
             {book.title}
           </h2>
           {book.description && (
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-white/70 line-clamp-5 sm:text-lg lg:mx-0">
+            <p className="mx-auto hidden max-w-2xl overflow-hidden text-sm leading-relaxed text-white/70 sm:[-webkit-box-orient:vertical] sm:[-webkit-line-clamp:4] sm:[display:-webkit-box] sm:text-base md:mx-0 lg:text-lg">
               {book.description}
             </p>
           )}
-          <div className="flex flex-col justify-center gap-3 pt-2 sm:flex-row lg:justify-start">
+          <div className="flex flex-col justify-center gap-3 pt-1 sm:flex-row md:justify-start">
             <Link
               href={`/books/${book.slug}`}
               tabIndex={isActive ? 0 : -1}

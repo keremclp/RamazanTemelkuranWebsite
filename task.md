@@ -12,10 +12,10 @@
 - [x] **USER ACTION**: Create `media` storage bucket (public) in Supabase
 
 ## Phase 2 — Public Pages ✅
-- [x] Home page (HeroSlider, Featured Books, Events Preview, Author Spotlight, CTA)
-- [x] Books page (grid via BookFilter component)
+- [x] Home page (promotional HeroSlider, Author Spotlight, social/contact closing section)
+- [x] Books page (published-book carousel supplied by Admin → Books)
 - [x] Book detail page (`/books/[slug]` with generateMetadata)
-- [x] Gallery page (GalleryFilter + Lightbox components)
+- [x] Gallery page (one event per carousel slide, media dialog, and photo lightbox)
 - [x] About page (bio, milestones timeline, social links)
 - [x] Contact page (ContactForm + API route `/api/contact`)
 
@@ -28,7 +28,7 @@
 - [x] Events CRUD + media management
 - [x] Gallery management
 - [x] Hero slider management
-- [x] Automatic hero button destinations (page, book, Shopier, or external site)
+- [x] Automatic hero button destinations (page, Shopier, or external site)
 - [x] About page editor
 - [x] Contact messages viewer
 - [x] Site settings
@@ -43,6 +43,8 @@ Detailed execution plan: [PHASE_4_IMPLEMENTATION_PLAN.md](PHASE_4_IMPLEMENTATION
 - [x] Local responsive/accessibility smoke testing and polish
 - [ ] Full deployed device/browser/accessibility matrix
 - [x] Source-level performance optimization
+- [x] Customer-requested homepage, Books, and Gallery carousel architecture
 - [ ] Production performance measurement and Core Web Vitals validation
-- [ ] Apply Phase 4 migrations and configure production secrets
+- [x] Prepare and document Phase 4 migrations and production secrets
+- [ ] Apply and verify all Phase 4 migrations remotely
 - [ ] Deploy to Vercel, connect the domain, and complete Google launch steps

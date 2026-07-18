@@ -6,6 +6,7 @@ import { getSiteSettings } from "@/lib/site-settings";
 import { createPageMetadata, metaDescription } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site-url";
 import JsonLd from "@/components/public/JsonLd";
+import PageIntro from "@/components/public/PageIntro";
 import ResilientImage from "@/components/public/ResilientImage";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -73,7 +74,7 @@ export default async function AboutPage() {
   });
 
   return (
-    <section className="section-padding">
+    <section className="py-6 sm:py-10 lg:py-12">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -91,19 +92,13 @@ export default async function AboutPage() {
         }}
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-bold font-[family-name:var(--font-heading)] text-primary mb-4">
-            Hakkında
-          </h1>
-          <div className="w-16 h-1 bg-accent mx-auto"></div>
-        </div>
+        <PageIntro title="Hakkında" />
 
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 mb-24 animate-fade-in-up">
+        <div className="mb-16 grid grid-cols-1 gap-8 animate-fade-in-up lg:grid-cols-5 lg:gap-10">
           {/* Portrait */}
           <div className="lg:col-span-2">
-            <div className="relative aspect-[3/4] rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card-hover)]">
+            <div className="relative mx-auto aspect-[3/4] w-full max-w-sm overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card-hover)]">
               {about?.portrait_image_url ? (
                 <ResilientImage
                   src={about.portrait_image_url}

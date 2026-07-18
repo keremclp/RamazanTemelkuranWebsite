@@ -23,7 +23,7 @@ A stylish, warm & elegant promotional website for a book author, built with Next
 | Color Mood | Warm & Elegant (charcoal + cream/ivory + muted gold) |
 | SEO | Full optimization (SSR/SSG, structured data, sitemap, Open Graph) |
 | Deployment | Vercel |
-| Content | Placeholder/demo content for now |
+| Content | Admin-managed; launch content requires client approval |
 
 ---
 
@@ -135,6 +135,7 @@ app/
 - page_count (int)
 - isbn (text)
 - display_order (int)
+- is_published (boolean; new books default to draft)
 - created_at (timestamp)
 - updated_at (timestamp)
 
@@ -144,6 +145,7 @@ app/
 - description (text)
 - event_date (date)
 - location (text)
+- homepage_media_id (uuid, FK → media; retained technical name for the event cover)
 - created_at (timestamp)
 
 ### media
@@ -162,8 +164,7 @@ app/
 - title (text)
 - subtitle (text)
 - cta_text (text)
-- cta_type (none, books, book, gallery, about, contact, shopier, external)
-- cta_book_id (uuid, FK → books; optional)
+- cta_type (none, books, gallery, about, contact, shopier, external)
 - cta_external_url (text; only for external targets)
 - cta_link (legacy text; retained temporarily for migration compatibility)
 - display_order (int)

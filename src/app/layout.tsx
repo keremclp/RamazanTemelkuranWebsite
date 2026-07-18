@@ -72,7 +72,10 @@ export default function RootLayout({
       lang="tr"
       className={`${playfairDisplay.variable} ${inter.variable}`}
     >
-      <body className="min-h-screen flex flex-col antialiased">
+      <body 
+        className="min-h-screen flex flex-col antialiased"
+        cz-shortcut-listen="true"
+      >
         {children}
       </body>
     </html>

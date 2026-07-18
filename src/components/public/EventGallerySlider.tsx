@@ -352,7 +352,7 @@ function EventSlide({
 
   return (
     <article
-      className="relative min-h-[620px] w-full shrink-0 overflow-hidden"
+      className="relative min-h-[600px] w-full shrink-0 overflow-hidden sm:min-h-[560px] lg:h-[clamp(450px,calc(100dvh-17rem),500px)] lg:min-h-0"
       aria-roledescription="slide"
       aria-label={`${position + 1} / ${total}`}
       aria-hidden={!isActive}
@@ -373,12 +373,12 @@ function EventSlide({
       <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/25" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
 
-      <div className="relative flex min-h-[620px] items-center px-14 pb-24 pt-16 sm:px-20 lg:px-24">
-        <div className="max-w-2xl space-y-5 text-white">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-accent">
+      <div className="relative flex min-h-[600px] items-center px-12 pb-20 pt-10 sm:min-h-[560px] sm:px-20 lg:h-[clamp(450px,calc(100dvh-17rem),500px)] lg:min-h-0 lg:px-24">
+        <div className="max-w-2xl space-y-4 text-white">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent sm:text-sm">
             Etkinliklerimiz
           </p>
-          <h2 className="break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
+          <h2 className="break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.75rem]">
             {event.title}
           </h2>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/75 sm:text-base">
@@ -398,7 +398,7 @@ function EventSlide({
             </span>
           </div>
           {event.description && (
-            <p className="max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+            <p className="max-w-xl overflow-hidden text-sm leading-relaxed text-white/75 [-webkit-box-orient:vertical] [-webkit-line-clamp:4] [display:-webkit-box] sm:text-base lg:text-lg">
               {truncate(event.description, 280)}
             </p>
           )}
