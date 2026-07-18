@@ -76,14 +76,26 @@ export default function SettingsForm({
             />
           </Field>
 
-          <Field label="İletişim e-postası" htmlFor="contact_email">
+          <Field label="İletişim e-postası 1" htmlFor="contact_email">
             <input
               id="contact_email"
               name="contact_email"
               type="email"
               defaultValue={settings.contact_email}
               className={inputClassName}
-              placeholder="info@example.com"
+              placeholder="yazarvesair@gmail.com"
+              disabled={pending}
+            />
+          </Field>
+
+          <Field label="İletişim e-postası 2" htmlFor="contact_email_secondary">
+            <input
+              id="contact_email_secondary"
+              name="contact_email_secondary"
+              type="email"
+              defaultValue={settings.contact_email_secondary}
+              className={inputClassName}
+              placeholder="ramazantemelkuran1@hotmail.com"
               disabled={pending}
             />
           </Field>

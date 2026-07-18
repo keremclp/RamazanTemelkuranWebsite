@@ -14,6 +14,7 @@ interface SiteSettingsPayload {
   shopier_main_url: string;
   meta_description: string;
   contact_email: string;
+  contact_email_secondary: string;
   contact_location: string;
   social_links: SocialLinks;
 }
@@ -62,6 +63,7 @@ function parseSiteSettingsForm(formData: FormData): ParsedSiteSettingsForm {
   const metaDescription = getString(formData, "meta_description");
   const shopierMainUrl = getString(formData, "shopier_main_url");
   const contactEmail = getString(formData, "contact_email");
+  const contactEmailSecondary = getString(formData, "contact_email_secondary");
   const contactLocation = getString(formData, "contact_location");
 
   if (!siteTitle) return { error: "Site başlığı gereklidir." };
@@ -73,6 +75,10 @@ function parseSiteSettingsForm(formData: FormData): ParsedSiteSettingsForm {
 
   if (contactEmail && !isValidEmail(contactEmail)) {
     return { error: "İletişim e-postası geçerli bir e-posta olmalıdır." };
+  }
+
+  if (contactEmailSecondary && !isValidEmail(contactEmailSecondary)) {
+    return { error: "İkinci iletişim e-postası geçerli bir e-posta olmalıdır." };
   }
 
   const socialLinks: SocialLinks = {};
@@ -90,6 +96,7 @@ function parseSiteSettingsForm(formData: FormData): ParsedSiteSettingsForm {
       shopier_main_url: shopierMainUrl,
       meta_description: metaDescription,
       contact_email: contactEmail,
+      contact_email_secondary: contactEmailSecondary,
       contact_location: contactLocation,
       social_links: socialLinks,
     },

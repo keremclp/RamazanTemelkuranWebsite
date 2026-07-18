@@ -7,7 +7,8 @@ export const fallbackSiteSettings: SiteSettings = {
   shopier_main_url: "",
   meta_description:
     "Yazar Ramazan Temelkuran'ın resmi web sitesi. Kitaplar, etkinlikler ve daha fazlası.",
-  contact_email: "",
+  contact_email: "yazarvesair@gmail.com",
+  contact_email_secondary: "ramazantemelkuran1@hotmail.com",
   contact_location: "",
   social_links: {},
   updated_at: new Date(0).toISOString(),

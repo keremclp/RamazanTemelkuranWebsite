@@ -46,13 +46,19 @@ function isDisplayableUrl(value: string | undefined) {
 
 export default async function ContactPage() {
   const settings = await getSiteSettings();
-  const contactEmail = settings.contact_email?.trim() ?? "";
+  const contactEmails = Array.from(
+    new Set(
+      [settings.contact_email, settings.contact_email_secondary]
+        .map((email) => email?.trim())
+        .filter((email): email is string => Boolean(email))
+    )
+  );
   const contactLocation = settings.contact_location?.trim() ?? "";
   const socialEntries = socialPlatforms.flatMap((platform) => {
     const href = settings.social_links?.[platform.key];
     return isDisplayableUrl(href) ? [{ ...platform, href: href as string }] : [];
   });
-  const hasContactDetails = Boolean(contactEmail || contactLocation);
+  const hasContactDetails = contactEmails.length > 0 || Boolean(contactLocation);
 
   return (
     <section className="py-6 sm:py-10 lg:py-12">
@@ -80,19 +86,24 @@ export default async function ContactPage() {
                 </h3>
 
                 <div className="space-y-5">
-                  {contactEmail && (
+                  {contactEmails.length > 0 && (
                     <div className="flex items-start gap-4">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
                         <Mail className="h-5 w-5 text-accent" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-primary">E-posta</p>
-                        <a
-                          href={`mailto:${contactEmail}`}
-                          className="text-sm text-muted transition-colors hover:text-accent"
-                        >
-                          {contactEmail}
-                        </a>
+                        <div className="mt-1 space-y-1">
+                          {contactEmails.map((email) => (
+                            <a
+                              key={email}
+                              href={`mailto:${email}`}
+                              className="block text-[13px] text-muted transition-colors [overflow-wrap:anywhere] hover:text-accent"
+                            >
+                              {email}
+                            </a>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}

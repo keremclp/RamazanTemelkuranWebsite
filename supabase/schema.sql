@@ -130,6 +130,7 @@ CREATE TABLE site_settings (
   shopier_main_url TEXT NOT NULL DEFAULT '',
   meta_description TEXT NOT NULL DEFAULT '',
   contact_email TEXT NOT NULL DEFAULT '',
+  contact_email_secondary TEXT NOT NULL DEFAULT '',
   contact_location TEXT NOT NULL DEFAULT '',
   social_links JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -707,6 +708,7 @@ INSERT INTO site_settings (
   shopier_main_url,
   meta_description,
   contact_email,
+  contact_email_secondary,
   contact_location,
   social_links
 )
@@ -714,7 +716,8 @@ VALUES (
   'Ramazan Temelkuran',
   '',
   'Yazar Ramazan Temelkuran''ın resmi web sitesi. Kitaplar, etkinlikler ve daha fazlası.',
-  '',
+  'yazarvesair@gmail.com',
+  'ramazantemelkuran1@hotmail.com',
   '',
   '{}'::jsonb
 );

@@ -144,6 +144,7 @@ export interface SiteSettings {
   shopier_main_url: string;
   meta_description: string;
   contact_email: string;
+  contact_email_secondary: string;
   contact_location: string;
   social_links: SocialLinks;
   updated_at: string;

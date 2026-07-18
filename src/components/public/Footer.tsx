@@ -36,7 +36,13 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
     const url = settings.social_links[platform];
     return url && url !== "#" ? [{ platform, url }] : [];
   });
-  const contactEmail = settings.contact_email?.trim() ?? "";
+  const contactEmails = Array.from(
+    new Set(
+      [settings.contact_email, settings.contact_email_secondary]
+        .map((email) => email?.trim())
+        .filter((email): email is string => Boolean(email))
+    )
+  );
 
   return (
     <footer className="bg-primary text-white/80">
@@ -107,18 +113,23 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
               </div>
             )}
 
-            {contactEmail && (
+            {contactEmails.length > 0 && (
             <div className="space-y-2">
               <h4 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-white">
                 İletişim
               </h4>
-              <a
-                href={`mailto:${contactEmail}`}
-                className="flex items-center gap-2 text-sm text-white/60 hover:text-accent transition-colors no-underline"
-              >
-                <Mail size={14} />
-                {contactEmail}
-              </a>
+              <div className="space-y-2">
+                {contactEmails.map((email) => (
+                  <a
+                    key={email}
+                    href={`mailto:${email}`}
+                    className="flex items-center gap-2 break-all text-sm text-white/60 hover:text-accent transition-colors no-underline"
+                  >
+                    <Mail size={14} className="shrink-0" />
+                    {email}
+                  </a>
+                ))}
+              </div>
             </div>
             )}
           </div>
