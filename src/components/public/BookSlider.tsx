@@ -186,7 +186,7 @@ export default function BookSlider({ books }: BookSliderProps) {
 
   return (
     <section
-      className="relative overflow-hidden rounded-3xl bg-primary shadow-[var(--shadow-card-hover)]"
+      className="relative overflow-hidden rounded-3xl bg-hero-cream shadow-[var(--shadow-card-hover)] ring-1 ring-primary/10"
       aria-roledescription="carousel"
       aria-label="Yayımlanmış kitaplar"
     >
@@ -227,7 +227,7 @@ export default function BookSlider({ books }: BookSliderProps) {
             type="button"
             onClick={previous}
             disabled={isTransitioning}
-            className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-wait disabled:opacity-50 sm:left-5 sm:h-12 sm:w-12"
+            className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm transition hover:bg-white disabled:cursor-wait disabled:opacity-50 sm:left-5 sm:h-12 sm:w-12"
             aria-label="Önceki kitap"
           >
             <ChevronLeft size={22} />
@@ -236,14 +236,14 @@ export default function BookSlider({ books }: BookSliderProps) {
             type="button"
             onClick={next}
             disabled={isTransitioning}
-            className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-wait disabled:opacity-50 sm:right-5 sm:h-12 sm:w-12"
+            className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm transition hover:bg-white disabled:cursor-wait disabled:opacity-50 sm:right-5 sm:h-12 sm:w-12"
             aria-label="Sonraki kitap"
           >
             <ChevronRight size={22} />
           </button>
 
           <div
-            className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/30 px-3 py-2 backdrop-blur-sm sm:bottom-7"
+            className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-surface/85 px-3 py-2 shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm sm:bottom-7"
             aria-label="Kitap seçimi"
           >
             {books.map((book, index) => (
@@ -255,7 +255,7 @@ export default function BookSlider({ books }: BookSliderProps) {
                 className={`h-2.5 cursor-pointer rounded-full transition-all duration-300 disabled:cursor-wait ${
                   index === current
                     ? "w-8 bg-accent"
-                    : "w-2.5 bg-white/45 hover:bg-white/75"
+                    : "w-2.5 bg-primary/30 hover:bg-primary/50"
                 }`}
                 aria-label={`Kitap ${index + 1}: ${book.title}`}
                 aria-current={index === current ? "true" : undefined}
@@ -267,7 +267,7 @@ export default function BookSlider({ books }: BookSliderProps) {
             type="button"
             onClick={() => setAutoplayPaused((paused) => !paused)}
             disabled={prefersReducedMotion}
-            className="absolute bottom-5 right-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-7 sm:right-6"
+            className="absolute bottom-5 right-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-7 sm:right-6"
             aria-label={
               prefersReducedMotion
                 ? "Cihaz hareket tercihi nedeniyle otomatik oynatma kapalı"
@@ -316,16 +316,16 @@ function BookSlide({
       aria-label={`${position + 1} / ${total}`}
       aria-hidden={!isActive}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(197,165,90,0.22),transparent_38%),radial-gradient(circle_at_90%_85%,rgba(197,165,90,0.12),transparent_40%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(197,165,90,0.24),transparent_38%),radial-gradient(circle_at_90%_85%,rgba(166,138,62,0.12),transparent_40%),linear-gradient(135deg,#fbf7ef_0%,#f0e6d8_100%)]" />
       <div className="relative mx-auto grid min-h-[600px] w-full max-w-6xl items-center gap-5 px-12 pb-16 pt-6 sm:min-h-[560px] sm:px-16 sm:pb-20 sm:pt-8 md:grid-cols-[minmax(150px,190px)_minmax(0,1fr)] md:gap-10 md:px-20 lg:h-[clamp(450px,calc(100dvh-17rem),500px)] lg:min-h-0 lg:grid-cols-[minmax(170px,210px)_minmax(0,1fr)] lg:gap-12 lg:px-24">
         <div className="flex justify-center">
-          <div className="relative aspect-[2/3] w-32 overflow-hidden rounded-lg bg-white/5 shadow-2xl shadow-black/40 ring-1 ring-white/15 sm:w-40 md:w-44 lg:w-48">
+          <div className="relative aspect-[2/3] w-32 overflow-hidden rounded-lg bg-surface shadow-[0_22px_50px_rgba(44,44,44,0.18)] ring-1 ring-primary/10 sm:w-40 md:w-44 lg:w-48">
             {book.cover_image_url ? (
               <ResilientImage
                 src={book.cover_image_url}
                 alt={`${book.title} kitap kapağı`}
                 fallback={
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/25 to-white/5">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/20 to-hero-cream-deep">
                     <BookOpen size={64} className="text-accent/55" />
                   </div>
                 }
@@ -335,7 +335,7 @@ function BookSlide({
                 sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 176px, 192px"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/25 to-white/5">
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/20 to-hero-cream-deep">
                 <BookOpen size={64} className="text-accent/55" />
               </div>
             )}
@@ -346,11 +346,11 @@ function BookSlide({
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent sm:text-sm">
             Yazarın eserleri
           </p>
-          <h2 className="break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.75rem]">
+          <h2 className="break-words text-3xl font-bold leading-tight text-hero-ink sm:text-4xl lg:text-[2.75rem]">
             {book.title}
           </h2>
           {book.description && (
-            <p className="mx-auto hidden max-w-2xl overflow-hidden text-sm leading-relaxed text-white/70 sm:[-webkit-box-orient:vertical] sm:[-webkit-line-clamp:4] sm:[display:-webkit-box] sm:text-base md:mx-0 lg:text-lg">
+            <p className="mx-auto hidden max-w-2xl overflow-hidden text-sm leading-relaxed text-hero-muted sm:[-webkit-box-orient:vertical] sm:[-webkit-line-clamp:4] sm:[display:-webkit-box] sm:text-base md:mx-0 lg:text-lg">
               {book.description}
             </p>
           )}
@@ -369,7 +369,7 @@ function BookSlide({
                 target="_blank"
                 rel="noopener noreferrer"
                 tabIndex={isActive ? 0 : -1}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-6 py-3 font-medium text-white no-underline transition hover:border-accent/50 hover:bg-white/10"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-accent/35 bg-surface/60 px-6 py-3 font-medium text-primary no-underline transition hover:border-accent hover:bg-white"
               >
                 Shopier&apos;den Al
                 <ExternalLink size={15} />

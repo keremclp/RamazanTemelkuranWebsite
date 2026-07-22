@@ -24,17 +24,17 @@ function BookCover({
 }) {
   return (
     <figure
-      className={`relative aspect-[2/3] overflow-hidden rounded-xl border bg-primary-light shadow-xl ${
+      className={`relative aspect-[2/3] overflow-hidden rounded-xl border bg-surface shadow-xl ${
         featured
-          ? "w-[clamp(7rem,26vw,10rem)] border-accent/45 sm:w-[clamp(9rem,22vw,12rem)] lg:w-[clamp(12rem,13vw,14.5rem)]"
-          : "w-full border-primary/10"
+          ? "w-[clamp(7rem,26vw,10rem)] border-accent/45 shadow-[0_18px_42px_rgba(44,44,44,0.16)] sm:w-[clamp(9rem,22vw,12rem)] lg:w-[clamp(12rem,13vw,14.5rem)]"
+          : "w-full border-primary/10 shadow-[0_10px_24px_rgba(44,44,44,0.12)]"
       }`}
     >
       <ResilientImage
         src={book.cover_image_url!}
         alt={`${book.title} kitap kapağı`}
         fallback={
-          <div className="flex h-full w-full items-center justify-center bg-primary-light">
+          <div className="flex h-full w-full items-center justify-center bg-hero-cream-deep">
             <BookOpen size={featured ? 32 : 22} className="text-accent/55" />
           </div>
         }
@@ -68,7 +68,7 @@ export default function ShopierBookSlideVisual({
 
   const [featuredBook, ...shelfBooks] = books;
   const orderPanelClassName =
-    "group flex min-h-16 items-center gap-2 rounded-2xl bg-primary px-3 py-3 text-left text-white shadow-lg transition sm:gap-3 sm:px-5 lg:min-h-20 lg:hover:-translate-y-0.5 lg:hover:bg-primary-light";
+    "group flex min-h-16 items-center gap-2 rounded-2xl bg-accent-dark px-3 py-3 text-left text-white shadow-[0_16px_32px_rgba(166,138,62,0.28)] transition sm:gap-3 sm:px-5 lg:min-h-20 lg:hover:-translate-y-0.5 lg:hover:bg-primary";
   const orderPanelContent = (
     <>
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white lg:h-12 lg:w-12">
@@ -93,17 +93,17 @@ export default function ShopierBookSlideVisual({
   );
 
   return (
-    <div className="relative min-h-[85vh] w-full overflow-hidden bg-primary">
-      <DecorativeHeroBackground />
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-accent/10" />
+    <div className="relative min-h-[85vh] w-full overflow-hidden bg-hero-shop">
+      <DecorativeHeroBackground variant="shopier" />
+      <div className="absolute inset-0 bg-gradient-to-r from-hero-shop/95 via-hero-shop/58 to-white/10" />
 
       <div className="relative z-10 mx-auto grid min-h-[85vh] w-full max-w-[1720px] items-center gap-6 px-5 pb-24 pt-7 sm:px-16 sm:pt-9 lg:grid-cols-[minmax(300px,0.72fr)_minmax(680px,1.28fr)] lg:gap-12 lg:px-20 lg:py-12 xl:grid-cols-[minmax(360px,0.68fr)_minmax(760px,1.32fr)] xl:px-24">
         <div className="order-2 lg:order-1">
-          <HeroSlideCopy slide={slide} compact />
+          <HeroSlideCopy slide={slide} compact tone="light" />
         </div>
 
         <section
-          className="relative order-1 mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#f5efe4] p-4 text-primary shadow-[0_32px_80px_rgba(0,0,0,0.35)] sm:p-5 lg:order-2 lg:mx-0 lg:max-w-none lg:rounded-[2rem] lg:p-7"
+          className="relative order-1 mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-white bg-surface p-4 text-primary shadow-[0_30px_70px_rgba(120,83,48,0.18)] ring-1 ring-primary/10 sm:p-5 lg:order-2 lg:mx-0 lg:max-w-none lg:rounded-[2rem] lg:p-7"
           aria-label="Shopier kitap mağazası"
         >
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/15 blur-3xl" />

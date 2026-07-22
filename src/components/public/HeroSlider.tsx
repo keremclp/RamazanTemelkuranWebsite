@@ -87,10 +87,23 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
   if (total === 0) return null;
 
   const activeSlide = slides[current] ?? slides[0];
+  const usesLightControls = activeSlide.visual_source !== "uploaded_image";
+  const arrowClassName = usesLightControls
+    ? "bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm hover:bg-white"
+    : "bg-black/25 text-white backdrop-blur-sm hover:bg-black/45";
+  const controlClassName = usesLightControls
+    ? "bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm hover:bg-white"
+    : "bg-black/25 text-white backdrop-blur-sm hover:bg-black/45";
+  const dotsClassName = usesLightControls
+    ? "bg-surface/85 shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm"
+    : "bg-black/25 backdrop-blur-sm";
+  const inactiveDotClassName = usesLightControls
+    ? "w-2.5 bg-primary/30 hover:bg-primary/50"
+    : "w-2.5 bg-white/45 hover:bg-white/75";
 
   return (
     <section
-      className="relative min-h-[85vh] touch-pan-y overflow-hidden bg-primary"
+      className="relative min-h-[85vh] touch-pan-y overflow-hidden bg-hero-cream"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       aria-roledescription="carousel"
@@ -134,7 +147,7 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
           <button
             type="button"
             onClick={previous}
-            className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-sm transition hover:bg-black/45 sm:left-5 sm:h-12 sm:w-12"
+            className={`absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full transition sm:left-5 sm:h-12 sm:w-12 ${arrowClassName}`}
             aria-label="Önceki slayt"
           >
             <ChevronLeft size={22} />
@@ -142,14 +155,14 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
           <button
             type="button"
             onClick={next}
-            className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-sm transition hover:bg-black/45 sm:right-5 sm:h-12 sm:w-12"
+            className={`absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full transition sm:right-5 sm:h-12 sm:w-12 ${arrowClassName}`}
             aria-label="Sonraki slayt"
           >
             <ChevronRight size={22} />
           </button>
 
           <div
-            className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-2 backdrop-blur-sm sm:bottom-7"
+            className={`absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-2 sm:bottom-7 ${dotsClassName}`}
             aria-label="Slayt seçimi"
           >
             {slides.map((slide, index) => (
@@ -160,7 +173,7 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
                 className={`h-2.5 cursor-pointer rounded-full transition-all duration-300 ${
                   index === current
                     ? "w-8 bg-accent"
-                    : "w-2.5 bg-white/45 hover:bg-white/75"
+                    : inactiveDotClassName
                 }`}
                 aria-label={`Slayt ${index + 1}: ${slide.title || "Tanıtım"}`}
                 aria-current={index === current ? "true" : undefined}
@@ -172,7 +185,7 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
             type="button"
             onClick={() => setAutoplayPaused((paused) => !paused)}
             disabled={prefersReducedMotion}
-            className="absolute bottom-5 right-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-sm transition hover:bg-black/45 disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-7 sm:right-6"
+            className={`absolute bottom-5 right-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-7 sm:right-6 ${controlClassName}`}
             aria-label={
               prefersReducedMotion
                 ? "Cihaz hareket tercihi nedeniyle otomatik oynatma kapalı"

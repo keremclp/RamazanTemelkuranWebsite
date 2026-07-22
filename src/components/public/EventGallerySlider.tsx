@@ -213,7 +213,7 @@ export default function EventGallerySlider({
   return (
     <>
       <section
-        className="relative overflow-hidden rounded-3xl bg-primary shadow-[var(--shadow-card-hover)]"
+        className="relative overflow-hidden rounded-3xl bg-hero-sage shadow-[var(--shadow-card-hover)] ring-1 ring-primary/10"
         aria-roledescription="carousel"
         aria-label="Etkinlik galerileri"
       >
@@ -255,7 +255,7 @@ export default function EventGallerySlider({
               type="button"
               onClick={previous}
               disabled={isTransitioning || Boolean(selectedEvent)}
-              className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-wait disabled:opacity-50 sm:left-5 sm:h-12 sm:w-12"
+              className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm transition hover:bg-white disabled:cursor-wait disabled:opacity-50 sm:left-5 sm:h-12 sm:w-12"
               aria-label="Önceki etkinlik"
             >
               <ChevronLeft size={22} />
@@ -264,14 +264,14 @@ export default function EventGallerySlider({
               type="button"
               onClick={next}
               disabled={isTransitioning || Boolean(selectedEvent)}
-              className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-wait disabled:opacity-50 sm:right-5 sm:h-12 sm:w-12"
+              className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm transition hover:bg-white disabled:cursor-wait disabled:opacity-50 sm:right-5 sm:h-12 sm:w-12"
               aria-label="Sonraki etkinlik"
             >
               <ChevronRight size={22} />
             </button>
 
             <div
-              className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/30 px-3 py-2 backdrop-blur-sm sm:bottom-7"
+              className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-surface/85 px-3 py-2 shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm sm:bottom-7"
               aria-label="Etkinlik seçimi"
             >
               {events.map((event, index) => (
@@ -283,7 +283,7 @@ export default function EventGallerySlider({
                   className={`h-2.5 cursor-pointer rounded-full transition-all duration-300 disabled:cursor-wait ${
                     index === current
                       ? "w-8 bg-accent"
-                      : "w-2.5 bg-white/45 hover:bg-white/75"
+                      : "w-2.5 bg-primary/30 hover:bg-primary/50"
                   }`}
                   aria-label={`Etkinlik ${index + 1}: ${event.title}`}
                   aria-current={index === current ? "true" : undefined}
@@ -295,7 +295,7 @@ export default function EventGallerySlider({
               type="button"
               onClick={() => setAutoplayPaused((paused) => !paused)}
               disabled={prefersReducedMotion}
-              className="absolute bottom-5 right-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-7 sm:right-6"
+              className="absolute bottom-5 right-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-surface/85 text-primary shadow-[0_10px_24px_rgba(44,44,44,0.12)] ring-1 ring-primary/10 backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-7 sm:right-6"
               aria-label={
                 prefersReducedMotion
                   ? "Cihaz hareket tercihi nedeniyle otomatik oynatma kapalı"
@@ -370,18 +370,18 @@ function EventSlide({
       ) : (
         <EventCoverFallback />
       )}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/25" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-hero-ink/90 via-hero-ink/55 to-hero-ink/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-hero-ink/45 via-transparent to-hero-ink/10" />
 
       <div className="relative flex min-h-[600px] items-center px-12 pb-20 pt-10 sm:min-h-[560px] sm:px-20 lg:h-[clamp(450px,calc(100dvh-17rem),500px)] lg:min-h-0 lg:px-24">
         <div className="max-w-2xl space-y-4 text-white">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent sm:text-sm">
             Etkinliklerimiz
           </p>
-          <h2 className="break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.75rem]">
+          <h2 className="break-words text-3xl font-bold leading-tight text-white drop-shadow-sm sm:text-4xl lg:text-[2.75rem]">
             {event.title}
           </h2>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/75 sm:text-base">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/80 sm:text-base">
             <span className="inline-flex items-center gap-2">
               <CalendarDays size={17} className="text-accent" />
               {formatDate(event.event_date)}
@@ -398,7 +398,7 @@ function EventSlide({
             </span>
           </div>
           {event.description && (
-            <p className="max-w-xl overflow-hidden text-sm leading-relaxed text-white/75 [-webkit-box-orient:vertical] [-webkit-line-clamp:4] [display:-webkit-box] sm:text-base lg:text-lg">
+            <p className="max-w-xl overflow-hidden text-sm leading-relaxed text-white/80 [-webkit-box-orient:vertical] [-webkit-line-clamp:4] [display:-webkit-box] sm:text-base lg:text-lg">
               {truncate(event.description, 280)}
             </p>
           )}
