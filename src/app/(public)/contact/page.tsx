@@ -65,7 +65,7 @@ export default async function ContactPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <PageIntro
           title="İletişim"
-          description="Sorularınız, önerileriniz veya iş birliği talepleriniz için bizimle iletişime geçin."
+          description="Sorularınız, önerileriniz veya iş birliği talepleriniz için iletişime geçebilirsiniz."
         />
 
         <div className="grid grid-cols-1 gap-8 animate-fade-in-up lg:grid-cols-3">

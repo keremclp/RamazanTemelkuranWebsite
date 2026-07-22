@@ -140,9 +140,8 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            &copy; {currentYear} {settings.site_title}. Tüm hakları saklıdır.
+            &copy; {currentYear} {settings.site_title} | Tüm hakları saklıdır | Tasarım: <a href="https://keremcancelepkolu.com" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-accent transition-colors no-underline">keremcancelepkolu.com</a>
           </p>
-          <p className="text-xs text-white/30">Sevgiyle tasarlandı ✦</p>
         </div>
       </div>
     </footer>
