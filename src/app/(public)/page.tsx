@@ -2,9 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowRight,
-  ArrowUpRight,
   BookOpen,
-  Mail,
   User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -52,6 +50,67 @@ interface SelectedEventRow {
   hero_slide_id: string;
   display_order: number;
   event: SelectedEventRecord | SelectedEventRecord[] | null;
+}
+
+function InstagramBrandIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient
+          id="home-instagram-gradient"
+          x1="2"
+          y1="22"
+          x2="22"
+          y2="2"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#FFDC80" />
+          <stop offset="0.35" stopColor="#F77737" />
+          <stop offset="0.68" stopColor="#E1306C" />
+          <stop offset="1" stopColor="#833AB4" />
+        </linearGradient>
+      </defs>
+      <rect width="24" height="24" rx="6" fill="url(#home-instagram-gradient)" />
+      <rect
+        x="5.5"
+        y="5.5"
+        width="13"
+        height="13"
+        rx="4"
+        fill="none"
+        stroke="white"
+        strokeWidth="1.8"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="3.1"
+        fill="none"
+        stroke="white"
+        strokeWidth="1.8"
+      />
+      <circle cx="16.7" cy="7.4" r="1" fill="white" />
+    </svg>
+  );
+}
+
+function YouTubeBrandIcon() {
+  return (
+    <svg
+      width="22"
+      height="20"
+      viewBox="0 0 24 20"
+      aria-hidden="true"
+    >
+      <rect width="24" height="20" rx="5" fill="#FF0000" />
+      <path d="M10 6.2 16 10l-6 3.8V6.2Z" fill="white" />
+    </svg>
+  );
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -189,6 +248,20 @@ async function getHomePageData() {
 
 export default async function HomePage() {
   const { heroSlides, about, settings } = await getHomePageData();
+  const socialLinks = [
+    {
+      label: "Instagram",
+      url: settings.social_links.instagram,
+      icon: <InstagramBrandIcon />,
+    },
+    {
+      label: "YouTube",
+      url: settings.social_links.youtube,
+      icon: <YouTubeBrandIcon />,
+    },
+  ].flatMap((entry) =>
+    entry.url && entry.url !== "#" ? [{ ...entry, url: entry.url }] : []
+  );
 
   return (
     <>
@@ -271,7 +344,7 @@ export default async function HomePage() {
         <section className="section-padding bg-secondary">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid items-center gap-12 lg:grid-cols-2">
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-5">
                 <div className="relative flex h-72 w-72 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 sm:h-96 sm:w-96">
                   {about.portrait_image_url ? (
                     <ResilientImage
@@ -287,6 +360,26 @@ export default async function HomePage() {
                   )}
                   <div className="absolute -inset-2 -z-10 rounded-2xl border-2 border-accent/20" />
                 </div>
+
+                {socialLinks.length > 0 && (
+                  <div
+                    className="flex flex-wrap items-center justify-center gap-3"
+                    aria-label="Sosyal medya hesapları"
+                  >
+                    {socialLinks.map((entry) => (
+                      <a
+                        key={entry.label}
+                        href={entry.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-primary no-underline shadow-sm transition hover:border-accent/50 hover:text-accent-dark"
+                      >
+                        {entry.icon}
+                        {entry.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-6">
@@ -316,54 +409,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      <HomeClosingSection settings={settings} />
     </>
-  );
-}
-
-function HomeClosingSection({ settings }: { settings: SiteSettings }) {
-  const socialLinks = [
-    { label: "Instagram", url: settings.social_links.instagram },
-    { label: "YouTube", url: settings.social_links.youtube },
-  ].filter((entry): entry is { label: string; url: string } =>
-    Boolean(entry.url && entry.url !== "#")
-  );
-
-  return (
-    <section className="border-t border-border/60 bg-surface py-14 sm:py-16">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 text-center sm:px-6 lg:px-8">
-        <div className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            Bağlantıda Kalın
-          </p>
-          <h2 className="text-2xl font-bold text-primary sm:text-3xl">
-            Yeni çalışmalar ve etkinlikler için takipte kalın
-          </h2>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {socialLinks.map((entry) => (
-            <a
-              key={entry.label}
-              href={entry.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-5 py-2.5 text-sm font-medium text-primary no-underline transition hover:border-accent/40 hover:text-accent-dark"
-            >
-              {entry.label}
-              <ArrowUpRight size={15} />
-            </a>
-          ))}
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-accent-dark"
-          >
-            <Mail size={15} />
-            İletişime Geç
-          </Link>
-        </div>
-      </div>
-    </section>
   );
 }
