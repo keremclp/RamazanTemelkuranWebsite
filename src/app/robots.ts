@@ -3,7 +3,13 @@ import { absoluteUrl, getSiteUrl, shouldAllowSearchIndexing } from "@/lib/site-u
 
 export default function robots(): MetadataRoute.Robots {
   if (!shouldAllowSearchIndexing()) {
-    return { rules: { userAgent: "*", disallow: "/" } };
+    return {
+      rules: {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/admin/", "/api/"],
+      },
+    };
   }
 
   return {

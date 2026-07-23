@@ -16,6 +16,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SECRET_KEY=
 SITE_URL=https://ramazantemelkuran.com
+SEARCH_INDEXING_ENABLED=false
 ```
 
 `SUPABASE_SECRET_KEY` is server-only and must never be prefixed with `NEXT_PUBLIC_`, committed, logged, or shared with the client. It is used only by the protected contact-form submission path.
@@ -60,15 +61,15 @@ The important public endpoints are:
 /icon.svg
 ```
 
-Vercel Preview deployments intentionally use `noindex`. A Vercel Production deployment, including the permanent `vercel.app` production URL, is indexable and must not be treated as a private preview.
+Local, Vercel Preview, and Vercel Production deployments use `noindex, nofollow` unless both `VERCEL_ENV=production` and `SEARCH_INDEXING_ENABLED=true`. Keep `SEARCH_INDEXING_ENABLED=false` through review, domain connection, and real-domain validation. Set it to `true` only after the final launch gate is approved, then redeploy.
 
 ## Production deployment
 
 1. Back up the Supabase database and record which migrations are already applied.
 2. Apply missing migrations in filename order through `20260717_add_hero_slide_presentation_type.sql`. The two `20260715` migrations are required by the current book and contact behavior.
 3. Deploy and verify the application version that no longer reads the retired `presentation_type` and `cta_book_id` columns.
-4. Apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, `20260720_allow_shopier_book_showcases.sql`, and `20260721_add_secondary_contact_email.sql` in order. These add curated selections, transactional persistence, the Shopier-targeted book showcase, and support for a second public contact email.
-5. Configure all four environment variables in Vercel Production. Configure only the public Supabase variables in Preview when Preview deployments need database access.
+4. Apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, `20260720_allow_shopier_book_showcases.sql`, `20260721_add_secondary_contact_email.sql`, and `20260723_remove_legacy_media_storage_policies.sql` in order. These add curated selections, transactional persistence, the Shopier-targeted book showcase, support for a second public contact email, and removal of the two legacy broad Storage policies.
+5. Configure all five environment variables in Vercel Production, with `SEARCH_INDEXING_ENABLED=false`. Configure only the public Supabase variables in Preview when Preview deployments need database access; Preview remains non-indexable regardless of the switch.
 6. Deploy the curated-slider application code and complete public/admin smoke tests using the Vercel URL.
 7. Convert the existing `Kitaplarımız`, `Etkinliklerimiz`, and Shopier slides to their curated sources/destinations, verify desktop/mobile, and remove old fallback banners only after approval.
 8. Connect `ramazantemelkuran.com` and redirect `www` to the apex domain.
@@ -77,4 +78,4 @@ Vercel Preview deployments intentionally use `noindex`. A Vercel Production depl
 
 Do not edit or re-run older migration files. Apply forward migrations once and in filename order; never deploy code that depends on a migration before that migration is present remotely.
 
-See [PHASE_4_IMPLEMENTATION_PLAN.md](./PHASE_4_IMPLEMENTATION_PLAN.md) for launch gates, content-owner requirements, DNS steps, SEO validation, and post-launch monitoring.
+Use the [remaining production launch plan](./plans/PHASE_4_REMAINING_LAUNCH_PLAN.md) as the active launch checklist. The [Phase 4 implementation plan](./plans/PHASE_4_IMPLEMENTATION_PLAN.md) remains the historical specification and implementation record.

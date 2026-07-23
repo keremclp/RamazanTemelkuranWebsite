@@ -20,8 +20,10 @@ export function absoluteUrl(path = "/") {
 }
 
 export function shouldAllowSearchIndexing() {
-  if (process.env.VERCEL_ENV) return process.env.VERCEL_ENV === "production";
-  return process.env.NODE_ENV === "production";
+  return (
+    process.env.VERCEL_ENV === "production" &&
+    process.env.SEARCH_INDEXING_ENABLED === "true"
+  );
 }
 
 export { productionUrl };

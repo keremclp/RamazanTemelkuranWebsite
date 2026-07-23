@@ -6,10 +6,12 @@
 **Primary language:** Turkish  
 **Public identity:** `Yazar Ramazan Temelkuran`  
 **Hosting:** Vercel  
-**Domain registrar / DNS:** Natro  
+**Domain registrar / DNS:** GoDaddy<br>
 **Backend:** Supabase  
 **Plan status:** Implemented in source; production launch gates remain open
-**Last reviewed:** 2026-07-18
+**Last reviewed:** 2026-07-23
+
+> **Active launch checklist:** Client approval is complete and the domain has been purchased. Use [PHASE_4_REMAINING_LAUNCH_PLAN.md](./PHASE_4_REMAINING_LAUNCH_PLAN.md) for the current GoDaddy, Vercel, Supabase, final QA, and Google Search Console steps. This document remains the full historical Phase 4 specification.
 
 ---
 
@@ -102,16 +104,16 @@ The following rules apply throughout Phase 4:
 
 ### Still missing or incomplete
 
-- Client approval of biography, portrait, launch content, favicon, and social-sharing image.
+- Final favicon/social-sharing-image approval and the privacy/KVKK decision.
 - Remote Supabase migration audit/application and production policy verification.
 - Verification of all required Vercel Production environment variables.
 - Full deployed device/browser/accessibility matrix.
 - Production Lighthouse/Core Web Vitals audit.
-- Natro/Vercel domain configuration.
+- GoDaddy/Vercel domain configuration.
 - Supabase production URL configuration verification.
 - Google Search Console ownership, sitemap submission, and indexing checks.
 - Privacy/KVKK decision and final launch ownership record.
-- Optional explicit indexing switch if the permanent Vercel Production URL must continue serving unapproved review content; the current guard makes every Production deployment indexable.
+- Explicit production indexing switch and safe disabled-state robots behavior are implemented; production configuration and deployed verification remain open.
 
 ---
 
@@ -124,7 +126,7 @@ Phase 4 uses three gates so technical work can progress without publishing incom
 Required:
 
 - [x] Confirm this plan.
-- [ ] Purchase `ramazantemelkuran.com` if Natro confirms it is available.
+- [x] Purchase `ramazantemelkuran.com` from GoDaddy.
 - [ ] Do **not** change DNS records yet.
 - [x] Confirm the canonical domain remains `https://ramazantemelkuran.com`.
 - [x] Confirm the author identity remains `Yazar Ramazan Temelkuran`.
@@ -161,7 +163,7 @@ Required:
 - [ ] Structured data passes validation without errors.
 - [ ] Favicon and OG image resolve publicly.
 - [ ] Mobile, keyboard, reduced-motion, and performance checks pass.
-- [ ] Search Console Domain property is verified through Natro DNS.
+- [ ] Search Console Domain property is verified through GoDaddy DNS.
 
 Only after Gate C should the sitemap be submitted and indexing requested.
 
@@ -171,8 +173,8 @@ Only after Gate C should the sitemap be submitted and indexing requested.
 
 ### 6.1 Domain and account access
 
-- [ ] Purchase `ramazantemelkuran.com` from Natro.
-- [ ] Keep access to the Natro DNS management screen.
+- [x] Purchase `ramazantemelkuran.com` from GoDaddy.
+- [ ] Keep access to the GoDaddy DNS management screen.
 - [ ] Keep access to GitHub, Vercel, and Supabase.
 - [ ] Select the Google account that will own Search Console.
 - [ ] Never send passwords in chat; sign in directly or grant appropriate account access.
@@ -678,14 +680,14 @@ Add focused tests for:
 - Open `/sitemap.xml`.
 - Validate JSON-LD.
 - Verify favicon and Open Graph image URLs.
-- Confirm no `noindex` on production public pages.
+- Confirm `noindex` remains present until `SEARCH_INDEXING_ENABLED=true` is explicitly approved and deployed.
 - Confirm `noindex` on admin/login pages.
 - Confirm preview deployments are not indexable.
-- Do not promote unapproved review content to Vercel Production: the current indexing guard treats every Production deployment, including its `vercel.app` URL, as indexable.
+- Keep `SEARCH_INDEXING_ENABLED=false` on review deployments and through real-domain validation.
 
 ---
 
-## 13. Vercel and Natro Deployment
+## 13. Vercel and GoDaddy Deployment
 
 ### 13.1 Before DNS changes
 
@@ -694,7 +696,7 @@ Add focused tests for:
 - [ ] Configure Production variables and only the required public Preview variables.
 - [ ] Audit/apply missing migrations through `20260717` in filename order.
 - [ ] Deploy the compatible code and test using the Vercel URL.
-- [ ] Apply `20260718` cleanup, `20260719` curated-slider, and `20260720` Shopier-showcase migrations in order, then repeat Slider smoke tests.
+- [ ] Apply `20260718` cleanup, `20260719` curated-slider, `20260720` Shopier-showcase, `20260721` secondary-contact-email, and `20260723` legacy-Storage-policy cleanup migrations in order, then repeat Slider, Contact, and Storage-policy smoke tests.
 - [ ] Complete Gate B content approval.
 
 Expected production environment variables include:
@@ -704,22 +706,23 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SECRET_KEY
 SITE_URL=https://ramazantemelkuran.com
+SEARCH_INDEXING_ENABLED=false
 ```
 
-`SUPABASE_SECRET_KEY` is required only on the server for the protected contact submission path. It must never use a `NEXT_PUBLIC_` prefix or be exposed to browser code, logs, or Git. `SITE_URL` is the single trusted canonical-origin source.
+`SUPABASE_SECRET_KEY` is required only on the server for the protected contact submission path. It must never use a `NEXT_PUBLIC_` prefix or be exposed to browser code, logs, or Git. `SITE_URL` is the single trusted canonical-origin source. Keep `SEARCH_INDEXING_ENABLED=false` until the real-domain quality gate passes and explicit indexing approval is given.
 
 ### 13.2 Domain connection
 
 1. Add `ramazantemelkuran.com` to the Vercel project.
 2. Add `www.ramazantemelkuran.com` to the same project.
 3. Read the exact DNS records shown by Vercel for this project.
-4. Add those records in Natro; do not copy stale/example DNS values from documentation.
+4. Add those records in GoDaddy; do not copy stale/example DNS values from documentation.
 5. Set `ramazantemelkuran.com` as canonical.
 6. Configure a permanent redirect from `www` to the apex domain.
 7. Wait for DNS verification and SSL provisioning.
 8. Verify both HTTP and HTTPS variants reach the canonical HTTPS URL.
 
-Because the domain will initially have no email service, there are no MX records to preserve. If email is added later, its DNS records must be documented before changing nameservers or DNS providers.
+The owner confirmed that only `ramazantemelkuran.com` was purchased and no domain email service is configured. A zone-file export and screenshot were saved on 23 July 2026. Preserve the existing NS/SOA records, GoDaddy `_domainconnect` CNAME, and `_dmarc` TXT record; replace only the conflicting apex/`www` website records after Vercel supplies the exact targets. Do not change nameservers as part of the website connection.
 
 ### 13.3 Supabase production configuration
 
@@ -748,7 +751,7 @@ Because the domain will initially have no email service, there are no MX records
 ### 14.1 Ownership
 
 1. Add a Search Console **Domain property** for `ramazantemelkuran.com`.
-2. Add the Google-provided DNS TXT verification record in Natro.
+2. Add the Google-provided DNS TXT verification record in GoDaddy.
 3. Keep the verification record after verification.
 4. Grant access to the long-term owner/client Google account if different.
 
@@ -847,7 +850,7 @@ Create a final launch record containing:
 - migration list applied;
 - Vercel project owner;
 - Supabase project owner;
-- Natro domain owner;
+- GoDaddy domain owner;
 - Search Console owner;
 - canonical URL;
 - date of sitemap submission;
@@ -875,16 +878,16 @@ The technical, client-independent Phase 4 foundation is implemented in the repos
 
 The following steps are intentionally still open:
 
-1. Audit the remote migration history and apply any missing migrations through `20260717` in filename order before deploying code that depends on them.
+1. Remote verification on 23 July 2026 found no `supabase_migrations` history schema, but the logical production schema contains the expected effects through `20260721`. Do not rerun migrations without identifying a missing schema effect first.
 2. Verify `SUPABASE_SECRET_KEY` and `SITE_URL` in Vercel Production. The secret key is server-only and must never be exposed to the browser.
 3. Complete the owner/client content checklist in Section 6.
 4. Obtain approval for the icon and social-sharing image drafts.
-5. Deploy the cleanup-compatible source if it is not already live, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, and `20260720_allow_shopier_book_showcases.sql` in order.
+5. Deploy the cleanup-compatible source if it is not already live, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, `20260720_allow_shopier_book_showcases.sql`, `20260721_add_secondary_contact_email.sql`, and `20260723_remove_legacy_media_storage_policies.sql` in order.
 6. Deploy the curated-slider source and verify all three visual-source modes plus the Shopier-targeted book composition before removing uploaded fallback banners.
 7. Run the full device/performance matrix against the deployed Vercel build.
-8. Purchase/connect the domain, then complete Search Console submission and post-launch monitoring.
+8. Connect the purchased domain, then complete Search Console submission and post-launch monitoring.
 
-Phase 4 is therefore **implemented in source but not launch-complete**. Client approval, remote migration application, production deployment, DNS, and Google steps remain launch gates.
+Phase 4 is therefore **implemented in source but not launch-complete**. Remote migration verification/application, production deployment, DNS, final client acceptance, and Google steps remain launch gates.
 
 ### 17.1 Required migration/deployment sequence for slider cleanup and curated sources
 
@@ -892,15 +895,17 @@ The `20260718` migration removes the retired single-book homepage mode. The `202
 
 1. Back up Supabase and record the applied migration list.
 2. Apply missing migrations in filename order through `20260717_add_hero_slide_presentation_type.sql`. In particular, current book publishing and durable contact behavior require both `20260715` migrations.
-3. Configure/verify the four Production environment variables without exposing `SUPABASE_SECRET_KEY` to Preview or the browser.
+3. Configure/verify the five Production environment variables, including `SEARCH_INDEXING_ENABLED=false`, without exposing `SUPABASE_SECRET_KEY` to Preview or the browser.
 4. Deploy the application version that no longer reads the retired columns.
 5. Smoke-test the homepage, Books, Gallery, Admin → Slider, Admin → Books, Admin → Gallery, and the contact form.
 6. Apply `20260718_remove_hero_slide_book_presentation.sql`. The migration deactivates any unexpected remaining book-showcase rows, normalizes their CTA type, drops the obsolete columns, and reloads the PostgREST schema cache.
 7. Apply `20260719_add_curated_hero_slide_sources.sql`, which adds `visual_source`, ordered junction tables, RLS, and the transactional save RPC.
 8. Apply `20260720_allow_shopier_book_showcases.sql`, which permits selected-book compositions to target either Books or Shopier.
-9. Deploy the curated-slider application source.
-10. Test uploaded-image, selected-books, selected-events, and Shopier-targeted book compositions on desktop and mobile, then inspect Vercel/Supabase logs.
-11. Convert existing Books/Events/Shopier promotional slides and remove their uploaded fallbacks only after approval.
+9. Apply `20260721_add_secondary_contact_email.sql`, which adds the optional second public contact email.
+10. Apply `20260723_remove_legacy_media_storage_policies.sql`, which removes the two Dashboard-created policies that otherwise allow broad authenticated insert/select access alongside the administrator policies.
+11. Deploy the curated-slider application source.
+12. Test uploaded-image, selected-books, selected-events, Shopier-targeted book compositions, both configured contact emails, and administrator-only Storage mutations on desktop and mobile, then inspect Vercel/Supabase logs.
+13. Convert existing Books/Events/Shopier promotional slides and remove their uploaded fallbacks only after approval.
 
 Do not edit an older applied migration, drop columns manually, apply migrations out of filename order, or deploy Shopier-showcase code before `20260720` exists remotely.
 
@@ -961,7 +966,7 @@ Do not edit an older applied migration, drop columns manually, apply migrations 
 
 - [ ] Audit/apply missing migrations through `20260717`.
 - [ ] Deploy compatible application code.
-- [ ] Apply the `20260718` cleanup, `20260719` curated-slider, and `20260720` Shopier-showcase migrations in order.
+- [ ] Apply the `20260718` cleanup, `20260719` curated-slider, `20260720` Shopier-showcase, `20260721` secondary-contact-email, and `20260723` legacy-Storage-policy cleanup migrations in order.
 - [x] Run tests, lint, TypeScript, and build.
 - [ ] Perform complete public/admin smoke test.
 - [ ] Complete client content approval.
@@ -969,7 +974,7 @@ Do not edit an older applied migration, drop columns manually, apply migrations 
 ### Stage 6 — Domain launch
 
 - [ ] Add apex and `www` domains to Vercel.
-- [ ] Add exact Vercel-provided DNS records in Natro.
+- [ ] Add exact Vercel-provided DNS records in GoDaddy.
 - [ ] Configure `www` → apex redirect.
 - [ ] Verify HTTPS, canonical URLs, Supabase, and logs.
 
