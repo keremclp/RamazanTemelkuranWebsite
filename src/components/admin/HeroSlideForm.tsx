@@ -598,7 +598,7 @@ function SelectionManager({
   }
 
   return (
-    <section className="rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
+    <section className="min-w-0 max-w-full rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
       {selectedIds.map((id) => (
         <input key={id} type="hidden" name={inputName} value={id} />
       ))}
@@ -688,36 +688,38 @@ function SelectionManager({
           <h3 className="text-sm font-semibold text-primary">
             Gösterim sırası
           </h3>
-          <div className="mt-3 grid gap-2">
+          <div className="mt-3 grid min-w-0 gap-2">
             {selectedItems.map((item, index) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 rounded-xl border border-border bg-secondary/20 p-2.5"
+                className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-secondary/20 p-2.5 sm:gap-3"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent-dark">
                   {index + 1}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-primary">
+                <span className="min-w-0 truncate text-sm font-medium text-primary">
                   {item.title}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => move(index, -1)}
-                  disabled={pending || index === 0}
-                  className="rounded-lg p-2 text-muted transition hover:bg-accent/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label={`${item.title} seçimini yukarı taşı`}
-                >
-                  <ArrowUp size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => move(index, 1)}
-                  disabled={pending || index === selectedItems.length - 1}
-                  className="rounded-lg p-2 text-muted transition hover:bg-accent/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label={`${item.title} seçimini aşağı taşı`}
-                >
-                  <ArrowDown size={16} />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => move(index, -1)}
+                    disabled={pending || index === 0}
+                    className="rounded-lg p-2 text-muted transition hover:bg-accent/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={`${item.title} seçimini yukarı taşı`}
+                  >
+                    <ArrowUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(index, 1)}
+                    disabled={pending || index === selectedItems.length - 1}
+                    className="rounded-lg p-2 text-muted transition hover:bg-accent/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={`${item.title} seçimini aşağı taşı`}
+                  >
+                    <ArrowDown size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
