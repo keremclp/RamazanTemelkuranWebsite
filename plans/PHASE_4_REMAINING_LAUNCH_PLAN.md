@@ -332,11 +332,11 @@ Rules:
 ### Work
 
 - [ ] Confirm `main` is clean and synchronized with GitHub.
-- [ ] Create the new Vercel Production deployment.
-- [ ] Confirm the deployed commit SHA matches the intended commit.
+- [x] Create the new Vercel Production deployment. Commit `ac4c8e4` deployed successfully; a follow-up real-404 fix is pending redeployment.
+- [x] Confirm the deployed commit SHA matches the intended commit (`ac4c8e4ff28d7b73a8424def1868fd14fd53f3ac`).
 - [ ] Review Vercel build and runtime logs.
-- [ ] Verify the public `vercel.app` URL emits `noindex`.
-- [ ] Verify public content is still accessible to the client.
+- [x] Verify the public `vercel.app` URL emits `noindex, nofollow`.
+- [x] Verify public content is still accessible to the client; homepage returned `200` with the expected canonical URL and title.
 
 ### Public smoke test
 
@@ -457,6 +457,8 @@ DNS commonly updates quickly but can take longer to propagate. Do not repeatedly
 Indexing must still be disabled.
 
 ### SEO checks
+
+Implementation note (23 July 2026): the public route-group `loading.tsx` boundary was removed after the deployed missing-book check returned a streamed `200` soft-404. A local production build now returns a real `404` for an unknown book slug while the homepage remains `200`.
 
 - [ ] Every public route returns `200` except intentional `404` pages.
 - [ ] Every canonical URL uses `https://ramazantemelkuran.com`.
