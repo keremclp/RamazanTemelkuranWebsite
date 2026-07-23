@@ -308,7 +308,7 @@ export default async function HomePage() {
                 <div className="flex flex-wrap gap-4">
                   <Link
                     href="/contact"
-                    className="group inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-white no-underline transition-all duration-200 hover:bg-accent-dark"
+                    className="group inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-accent-on no-underline transition-all duration-200 hover:bg-accent-light"
                   >
                     <User size={18} />
                     İletişime Geç
@@ -372,7 +372,7 @@ export default async function HomePage() {
                         href={entry.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-primary no-underline shadow-sm transition hover:border-accent/50 hover:text-accent-dark"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-primary no-underline shadow-sm transition hover:border-accent/50 hover:text-accent-ink"
                       >
                         {entry.icon}
                         {entry.label}
@@ -384,7 +384,7 @@ export default async function HomePage() {
 
               <div className="space-y-6">
                 <div>
-                  <p className="mb-3 text-sm font-medium uppercase tracking-widest text-accent">
+                  <p className="mb-3 text-sm font-medium uppercase tracking-widest text-accent-ink">
                     Yazar Hakkında
                   </p>
                   <h2 className="text-3xl font-bold sm:text-4xl">
@@ -396,7 +396,7 @@ export default async function HomePage() {
                 </p>
                 <Link
                   href="/about"
-                  className="group inline-flex items-center gap-2 font-medium text-accent no-underline transition-colors hover:text-accent-dark"
+                  className="group inline-flex items-center gap-2 font-medium text-accent-ink no-underline transition-colors hover:text-primary"
                 >
                   Devamını Oku
                   <ArrowRight

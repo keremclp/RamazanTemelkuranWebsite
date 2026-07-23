@@ -47,7 +47,7 @@ export function HeroSlideCopy({
             href={slide.cta_href}
             target={opensNewTab ? "_blank" : undefined}
             rel={opensNewTab ? "noopener noreferrer" : undefined}
-            className="group inline-flex max-w-full items-center gap-2 break-words rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline shadow-[0_10px_24px_rgba(166,138,62,0.22)] transition hover:bg-accent-dark sm:px-6 sm:py-3 sm:text-base"
+            className="group inline-flex max-w-full items-center gap-2 break-words rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-accent-on no-underline shadow-[0_10px_24px_rgba(166,138,62,0.22)] transition hover:bg-accent-light sm:px-6 sm:py-3 sm:text-base"
           >
             {slide.cta_text}
             <ChevronRight

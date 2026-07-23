@@ -91,14 +91,14 @@ export default function Navbar({
               />
             </span>
             <span className="flex min-w-0 flex-col justify-center leading-none">
-              <span className="mb-1 flex items-center gap-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.24em] text-accent-dark sm:text-[0.625rem] sm:tracking-[0.28em]">
+              <span className="mb-1 flex items-center gap-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.24em] text-accent-ink sm:text-[0.625rem] sm:tracking-[0.28em]">
                 <span
                   className="h-px w-3 bg-accent sm:w-4"
                   aria-hidden="true"
                 />
                 Yazar
               </span>
-              <span className="truncate font-[family-name:var(--font-heading)] text-[1.05rem] font-bold leading-tight tracking-[0.01em] text-primary transition-colors duration-[var(--transition-base)] group-hover:text-accent-dark sm:text-[1.4rem] lg:text-2xl">
+              <span className="truncate font-[family-name:var(--font-heading)] text-[1.05rem] font-bold leading-tight tracking-[0.01em] text-primary transition-colors duration-[var(--transition-base)] group-hover:text-accent-ink sm:text-[1.4rem] lg:text-2xl">
                 {siteTitle}
               </span>
             </span>
@@ -116,7 +116,7 @@ export default function Navbar({
                   href={link.href}
                   className={`relative px-4 py-2 text-sm font-medium transition-colors duration-[var(--transition-fast)] no-underline ${
                     isActive
-                      ? "text-accent"
+                      ? "text-accent-ink"
                       : "text-primary/70 hover:text-primary"
                   }`}
                 >
@@ -132,7 +132,7 @@ export default function Navbar({
                 href={shopierUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-4 inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dark transition-colors duration-[var(--transition-fast)] no-underline"
+                className="ml-4 inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-accent-on text-sm font-medium rounded-lg hover:bg-accent-light transition-colors duration-[var(--transition-fast)] no-underline"
               >
                 <BookOpen size={16} />
                 Kitap Satın Al
@@ -144,7 +144,7 @@ export default function Navbar({
           <button
             ref={menuButtonRef}
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-primary transition-colors hover:text-accent"
+            className="md:hidden p-2 text-primary transition-colors hover:text-accent-ink"
             aria-label={isOpen ? "Menüyü kapat" : "Menüyü aç"}
             aria-expanded={isOpen}
             aria-controls="mobile-navigation"
@@ -175,7 +175,7 @@ export default function Navbar({
                   onClick={() => setIsOpen(false)}
                   className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors no-underline ${
                     isActive
-                      ? "text-accent bg-accent/5"
+                      ? "text-accent-ink bg-accent/5"
                       : "text-primary/70 hover:text-primary hover:bg-primary/5"
                   }`}
                 >
@@ -189,7 +189,7 @@ export default function Navbar({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 mx-4 mt-3 px-5 py-3 bg-accent text-white text-sm font-medium rounded-lg text-center justify-center hover:bg-accent-dark transition-colors no-underline"
+                className="flex items-center gap-2 mx-4 mt-3 px-5 py-3 bg-accent text-accent-on text-sm font-medium rounded-lg text-center justify-center hover:bg-accent-light transition-colors no-underline"
               >
                 <BookOpen size={16} />
                 Kitap Satın Al

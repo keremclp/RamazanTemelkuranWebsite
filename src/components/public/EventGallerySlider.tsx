@@ -407,7 +407,7 @@ function EventSlide({
             onClick={onOpen}
             disabled={event.media.length === 0}
             tabIndex={isActive ? 0 : -1}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-white transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-accent-on transition hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Images size={18} />
             {event.media.length > 0

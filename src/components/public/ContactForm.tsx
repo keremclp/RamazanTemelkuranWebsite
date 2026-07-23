@@ -103,7 +103,7 @@ export default function ContactForm() {
         </p>
         <button
           onClick={() => setStatus("idle")}
-          className="px-6 py-2.5 bg-accent text-white rounded-[var(--radius-md)] font-medium hover:bg-accent-dark transition-colors"
+          className="px-6 py-2.5 bg-accent text-accent-on rounded-[var(--radius-md)] font-medium hover:bg-accent-light transition-colors"
         >
           Yeni Mesaj Gönder
         </button>
@@ -236,8 +236,8 @@ export default function ContactForm() {
         disabled={status === "loading"}
         className={cn(
           "w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-[var(--radius-md)]",
-          "bg-accent text-white font-medium text-base",
-          "hover:bg-accent-dark transition-all duration-[var(--transition-base)]",
+          "bg-accent text-accent-on font-medium text-base",
+          "hover:bg-accent-light transition-all duration-[var(--transition-base)]",
           "disabled:opacity-60 disabled:cursor-not-allowed"
         )}
       >

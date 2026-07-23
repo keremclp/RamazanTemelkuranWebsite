@@ -68,10 +68,10 @@ export default function ShopierBookSlideVisual({
 
   const [featuredBook, ...shelfBooks] = books;
   const orderPanelClassName =
-    "group flex min-h-16 items-center gap-2 rounded-2xl bg-accent-dark px-3 py-3 text-left text-white shadow-[0_16px_32px_rgba(166,138,62,0.28)] transition sm:gap-3 sm:px-5 lg:min-h-20 lg:hover:-translate-y-0.5 lg:hover:bg-primary";
+    "group flex min-h-16 items-center gap-2 rounded-2xl bg-accent-ink px-3 py-3 text-left text-white shadow-[0_16px_32px_rgba(134,109,35,0.28)] transition sm:gap-3 sm:px-5 lg:min-h-20 lg:hover:-translate-y-0.5 lg:hover:bg-accent-on";
   const orderPanelContent = (
     <>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white lg:h-12 lg:w-12">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-dark text-white lg:h-12 lg:w-12">
         <ShieldCheck size={23} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
@@ -86,7 +86,7 @@ export default function ShopierBookSlideVisual({
         <ArrowUpRight
           size={20}
           aria-hidden="true"
-          className="shrink-0 text-accent transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          className="shrink-0 text-white/80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
         />
       )}
     </>
@@ -110,7 +110,7 @@ export default function ShopierBookSlideVisual({
 
           <header className="relative flex items-center justify-between gap-3 border-b border-primary/10 pb-3 lg:pb-5">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white lg:h-12 lg:w-12">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-dark text-white lg:h-12 lg:w-12">
                 <ShoppingBag size={23} aria-hidden="true" />
               </span>
               <span className="min-w-0">
@@ -124,7 +124,7 @@ export default function ShopierBookSlideVisual({
               </span>
             </div>
 
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-accent-dark sm:px-3 sm:text-sm">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-accent-ink sm:px-3 sm:text-sm">
               <ShieldCheck size={16} aria-hidden="true" />
               Güvenli Sipariş
             </span>

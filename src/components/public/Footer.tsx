@@ -104,7 +104,7 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
                   href={settings.shopier_main_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-dark transition-colors no-underline"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-accent-on text-sm font-medium rounded-lg hover:bg-accent-light transition-colors no-underline"
                 >
                   <BookOpen size={16} />
                   Shopier&apos;e Git
@@ -139,7 +139,7 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
       {/* Bottom Bar */}
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-white/60">
             &copy; {currentYear} {settings.site_title} | Tüm hakları saklıdır | Tasarım: <a href="https://keremcancelepkolu.com" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-accent transition-colors no-underline">keremcancelepkolu.com</a>
           </p>
         </div>
@@ -163,7 +163,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white/60 hover:bg-accent hover:text-white transition-all duration-200 no-underline"
+      className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white/60 hover:bg-accent hover:text-accent-on transition-all duration-200 no-underline"
     >
       {icon}
     </a>

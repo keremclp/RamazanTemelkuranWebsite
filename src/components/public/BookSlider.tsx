@@ -343,7 +343,7 @@ function BookSlide({
         </div>
 
         <div className="space-y-4 text-center md:text-left">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent sm:text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent-ink sm:text-sm">
             Yazarın eserleri
           </p>
           <h2 className="break-words text-3xl font-bold leading-tight text-hero-ink sm:text-4xl lg:text-[2.75rem]">
@@ -358,7 +358,7 @@ function BookSlide({
             <Link
               href={`/books/${book.slug}`}
               tabIndex={isActive ? 0 : -1}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-white no-underline transition hover:bg-accent-dark"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 font-medium text-accent-on no-underline transition hover:bg-accent-light"
             >
               Kitabı İncele
               <ChevronRight size={16} />

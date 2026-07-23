@@ -98,7 +98,7 @@ export default async function ContactPage() {
                             <a
                               key={email}
                               href={`mailto:${email}`}
-                              className="block text-[13px] text-muted transition-colors [overflow-wrap:anywhere] hover:text-accent"
+                              className="block text-[13px] text-muted transition-colors [overflow-wrap:anywhere] hover:text-accent-ink"
                             >
                               {email}
                             </a>
@@ -138,8 +138,8 @@ export default async function ContactPage() {
                       rel="noopener noreferrer"
                       className="group flex items-center gap-2.5 rounded-[var(--radius-md)] border border-border px-4 py-3 transition-all duration-[var(--transition-base)] hover:border-accent hover:bg-accent/5"
                     >
-                      <Icon className="h-4 w-4 text-muted transition-colors group-hover:text-accent" />
-                      <span className="text-xs font-medium text-primary transition-colors group-hover:text-accent">
+                      <Icon className="h-4 w-4 text-muted transition-colors group-hover:text-accent-ink" />
+                      <span className="text-xs font-medium text-primary transition-colors group-hover:text-accent-ink">
                         {label}
                       </span>
                     </a>

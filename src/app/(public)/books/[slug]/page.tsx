@@ -128,9 +128,9 @@ export default async function BookDetailPage({
       />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <nav aria-label="Sayfa yolu" className="mb-8 flex flex-wrap items-center gap-2 text-sm text-muted">
-          <Link href="/" className="transition-colors hover:text-accent">Ana Sayfa</Link>
+          <Link href="/" className="transition-colors hover:text-accent-ink">Ana Sayfa</Link>
           <span aria-hidden="true">/</span>
-          <Link href="/books" className="group inline-flex items-center gap-2 transition-colors hover:text-accent">
+          <Link href="/books" className="group inline-flex items-center gap-2 transition-colors hover:text-accent-ink">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             Kitaplar
           </Link>
@@ -196,7 +196,7 @@ export default async function BookDetailPage({
                 href={typedBook.shopier_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2.5 rounded-[var(--radius-md)] bg-accent px-8 py-4 text-lg font-semibold text-white shadow-md transition-all duration-[var(--transition-base)] hover:bg-accent-dark hover:shadow-lg sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2.5 rounded-[var(--radius-md)] bg-accent px-8 py-4 text-lg font-semibold text-accent-on shadow-md transition-all duration-[var(--transition-base)] hover:bg-accent-light hover:shadow-lg sm:w-auto"
               >
                 <BookOpen className="h-5 w-5" />
                 Shopier&apos;den Satın Al
@@ -237,7 +237,7 @@ export default async function BookDetailPage({
                     )}
                   </div>
                   <div className="p-5">
-                    <h3 className="font-bold text-primary transition-colors group-hover:text-accent font-[family-name:var(--font-heading)]">
+                    <h3 className="font-bold text-primary transition-colors group-hover:text-accent-ink font-[family-name:var(--font-heading)]">
                       {related.title}
                     </h3>
                   </div>

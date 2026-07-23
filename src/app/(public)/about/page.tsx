@@ -172,7 +172,7 @@ export default async function AboutPage() {
                     <div className="absolute left-2.5 md:left-6.5 top-1 w-3 h-3 rounded-full bg-accent border-2 border-surface shadow-sm"></div>
 
                     {/* Year Badge */}
-                    <span className="inline-block bg-accent/10 text-accent text-sm font-bold px-3 py-1 rounded-full mb-2">
+                    <span className="inline-block bg-accent/10 text-accent-ink text-sm font-bold px-3 py-1 rounded-full mb-2">
                       {milestone.year}
                     </span>
 
@@ -210,8 +210,8 @@ export default async function AboutPage() {
                     className="group flex items-center gap-3 px-6 py-3 bg-surface border border-border rounded-[var(--radius-lg)] shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:border-accent hover:-translate-y-0.5 transition-all duration-300"
                     title={socialLabels[platform]}
                   >
-                    <IconComponent className="w-5 h-5 text-muted group-hover:text-accent transition-colors" />
-                    <span className="text-sm font-medium text-primary group-hover:text-accent transition-colors">
+                    <IconComponent className="w-5 h-5 text-muted group-hover:text-accent-ink transition-colors" />
+                    <span className="text-sm font-medium text-primary group-hover:text-accent-ink transition-colors">
                       {socialLabels[platform]}
                     </span>
                   </a>
