@@ -696,7 +696,7 @@ Add focused tests for:
 - [ ] Configure Production variables and only the required public Preview variables.
 - [ ] Audit/apply missing migrations through `20260717` in filename order.
 - [ ] Deploy the compatible code and test using the Vercel URL.
-- [ ] Apply `20260718` cleanup, `20260719` curated-slider, `20260720` Shopier-showcase, `20260721` secondary-contact-email, and `20260723` legacy-Storage-policy cleanup migrations in order, then repeat Slider, Contact, and Storage-policy smoke tests.
+- [ ] Apply `20260718` cleanup, `20260719` curated-slider, `20260720` Shopier-showcase, `20260721` secondary-contact-email, `20260723` legacy-Storage-policy cleanup, and `20260724` contact timestamp-fix migrations in order, then repeat Slider, Contact, and Storage-policy smoke tests.
 - [ ] Complete Gate B content approval.
 
 Expected production environment variables include:
@@ -882,7 +882,7 @@ The following steps are intentionally still open:
 2. Verify `SUPABASE_SECRET_KEY` and `SITE_URL` in Vercel Production. The secret key is server-only and must never be exposed to the browser.
 3. Complete the owner/client content checklist in Section 6.
 4. Obtain approval for the icon and social-sharing image drafts.
-5. Deploy the cleanup-compatible source if it is not already live, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, `20260720_allow_shopier_book_showcases.sql`, `20260721_add_secondary_contact_email.sql`, and `20260723_remove_legacy_media_storage_policies.sql` in order.
+5. Deploy the cleanup-compatible source if it is not already live, smoke-test it, then apply `20260718_remove_hero_slide_book_presentation.sql`, `20260719_add_curated_hero_slide_sources.sql`, `20260720_allow_shopier_book_showcases.sql`, `20260721_add_secondary_contact_email.sql`, `20260723_remove_legacy_media_storage_policies.sql`, and `20260724_fix_contact_rate_limit_timestamp.sql` in order.
 6. Deploy the curated-slider source and verify all three visual-source modes plus the Shopier-targeted book composition before removing uploaded fallback banners.
 7. Run the full device/performance matrix against the deployed Vercel build.
 8. Connect the purchased domain, then complete Search Console submission and post-launch monitoring.
@@ -903,9 +903,10 @@ The `20260718` migration removes the retired single-book homepage mode. The `202
 8. Apply `20260720_allow_shopier_book_showcases.sql`, which permits selected-book compositions to target either Books or Shopier.
 9. Apply `20260721_add_secondary_contact_email.sql`, which adds the optional second public contact email.
 10. Apply `20260723_remove_legacy_media_storage_policies.sql`, which removes the two Dashboard-created policies that otherwise allow broad authenticated insert/select access alongside the administrator policies.
-11. Deploy the curated-slider application source.
-12. Test uploaded-image, selected-books, selected-events, Shopier-targeted book compositions, both configured contact emails, and administrator-only Storage mutations on desktop and mobile, then inspect Vercel/Supabase logs.
-13. Convert existing Books/Events/Shopier promotional slides and remove their uploaded fallbacks only after approval.
+11. Apply `20260724_fix_contact_rate_limit_timestamp.sql`, which renames the contact RPC's conflicting `current_time` PL/pgSQL variable so timestamp comparisons execute correctly.
+12. Deploy the curated-slider application source.
+13. Test uploaded-image, selected-books, selected-events, Shopier-targeted book compositions, both configured contact emails, and administrator-only Storage mutations on desktop and mobile, then inspect Vercel/Supabase logs.
+14. Convert existing Books/Events/Shopier promotional slides and remove their uploaded fallbacks only after approval.
 
 Do not edit an older applied migration, drop columns manually, apply migrations out of filename order, or deploy Shopier-showcase code before `20260720` exists remotely.
 
@@ -966,7 +967,7 @@ Do not edit an older applied migration, drop columns manually, apply migrations 
 
 - [ ] Audit/apply missing migrations through `20260717`.
 - [ ] Deploy compatible application code.
-- [ ] Apply the `20260718` cleanup, `20260719` curated-slider, `20260720` Shopier-showcase, `20260721` secondary-contact-email, and `20260723` legacy-Storage-policy cleanup migrations in order.
+- [ ] Apply the `20260718` cleanup, `20260719` curated-slider, `20260720` Shopier-showcase, `20260721` secondary-contact-email, `20260723` legacy-Storage-policy cleanup, and `20260724` contact timestamp-fix migrations in order.
 - [x] Run tests, lint, TypeScript, and build.
 - [ ] Perform complete public/admin smoke test.
 - [ ] Complete client content approval.

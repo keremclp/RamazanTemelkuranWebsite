@@ -26,7 +26,7 @@ This document contains only the work that remains after the main Phase 4 impleme
 - [x] Stable book URLs and Draft/Published behavior exist.
 - [x] Homepage, Books, Gallery, Events, and Shopier slider work is implemented.
 - [x] Durable Supabase-backed contact rate limiting exists.
-- [x] Required migrations through `20260723_remove_legacy_media_storage_policies.sql` exist in the repository.
+- [x] Required migrations through `20260724_fix_contact_rate_limit_timestamp.sql` exist in the repository.
 - [x] The repository was clean and synchronized with `origin/main` when this plan was prepared.
 
 ### Current domain state
@@ -245,6 +245,7 @@ Confirm these are applied in filename order, including the latest migration:
 20260720_allow_shopier_book_showcases.sql
 20260721_add_secondary_contact_email.sql
 20260723_remove_legacy_media_storage_policies.sql
+20260724_fix_contact_rate_limit_timestamp.sql
 ```
 
 Do not rerun or edit older applied migrations. If a migration is missing, apply only the missing forward migration in order.
@@ -287,6 +288,7 @@ In Supabase Dashboard → Authentication → URL Configuration:
 - [x] Manual logical database backup exists with a verification manifest, and all current `media` bucket images were downloaded separately.
 - [x] Required schema effects through `20260721` are verified. A migration-history schema was not present, so verification is effect-based rather than history-table-based.
 - [x] Apply and verify `20260723_remove_legacy_media_storage_policies.sql`; the Storage Policies page now shows only public read and administrator-only insert/update/delete.
+- [x] Apply and verify `20260724_fix_contact_rate_limit_timestamp.sql`; the first deployed contact smoke test exposed PostgreSQL error `42883` because the original RPC variable `current_time` resolved as the SQL `timetz` expression instead of the declared `timestamptz` variable. After the forward fix, the public form succeeded and the message appeared in Admin.
 - [x] Auth URL configuration points to the production domain while retaining the fixed Vercel review origin.
 - [x] Admin/RLS/Storage checks pass. The current non-routable administrator email will be replaced later as a separate account-recovery improvement.
 
@@ -332,8 +334,8 @@ Rules:
 ### Work
 
 - [ ] Confirm `main` is clean and synchronized with GitHub.
-- [x] Create the new Vercel Production deployment. Commit `ac4c8e4` deployed successfully; a follow-up real-404 fix is pending redeployment.
-- [x] Confirm the deployed commit SHA matches the intended commit (`ac4c8e4ff28d7b73a8424def1868fd14fd53f3ac`).
+- [x] Create the new Vercel Production deployment. Commit `d0a6a24` deployed successfully with the real-404 fix.
+- [x] Confirm the deployed commit SHA matches the intended commit (`d0a6a2482ddd17bf99b192aa76f314e87ef6ab7d`).
 - [ ] Review Vercel build and runtime logs.
 - [x] Verify the public `vercel.app` URL emits `noindex, nofollow`.
 - [x] Verify public content is still accessible to the client; homepage returned `200` with the expected canonical URL and title.
@@ -346,31 +348,31 @@ Rules:
 - [ ] About and Contact content is correct.
 - [ ] Navbar, footer, social, Shopier, and external links work.
 - [ ] Missing optional content is hidden cleanly.
-- [ ] A nonexistent book URL returns a real 404.
+- [x] A nonexistent book URL returns a real `404` and includes `noindex`.
 
 ### Admin smoke test
 
-- [ ] Login works without the dashboard sidebar.
-- [ ] Signed-out visitors cannot open protected admin pages.
+- [x] Login works without the dashboard sidebar.
+- [x] Signed-out visitors cannot open protected admin pages; `/admin` redirects to `/admin/login`.
 - [ ] Non-allowlisted users are denied.
-- [ ] Create and delete a test draft book.
-- [ ] Edit a book title and confirm its slug does not change.
+- [x] Create and delete a test draft book; the deleted slug returns `404`.
+- [x] Edit a book title and confirm its slug does not change.
 - [ ] Create/edit/delete a test event or media item.
 - [ ] Edit and restore a slider record.
 - [ ] Confirm Settings and About updates revalidate public pages.
 
 ### Contact smoke test
 
-- [ ] Submit one clearly identified test contact message.
-- [ ] Confirm it appears in Admin → Messages.
-- [ ] Delete the test message.
-- [ ] Confirm invalid and honeypot submissions are rejected.
-- [ ] Do not intentionally exhaust the production rate limit unless a controlled test is planned.
+- [x] Submit one clearly identified test contact message.
+- [x] Confirm it appears in Admin → Messages.
+- [x] Delete the test message.
+- [x] Confirm invalid and honeypot submissions are rejected with `400` without persistence.
+- [x] Do not intentionally exhaust the production rate limit unless a controlled test is planned.
 
 ### What you need to provide or do
 
-- [ ] Be available to sign into the admin account for the protected tests.
-- [ ] Confirm which records are test records before anything is deleted.
+- [x] Be available to sign into the admin account for the protected tests.
+- [x] Confirm which records are test records before anything is deleted.
 - [ ] Give final confirmation that the deployed content matches the approved version.
 
 ### Acceptance
@@ -686,7 +688,7 @@ Create a final launch record containing:
 - [ ] Supabase project owner
 - [ ] GoDaddy domain owner and renewal date
 - [ ] Search Console owner
-- [ ] Applied migration list through `20260723`
+- [ ] Applied migration list through `20260724`
 - [ ] Database backup date
 - [ ] Canonical URL and redirect rule
 - [ ] Sitemap submission date
